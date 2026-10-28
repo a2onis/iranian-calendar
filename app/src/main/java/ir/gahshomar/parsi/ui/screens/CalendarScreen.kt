@@ -35,7 +35,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -103,6 +107,7 @@ fun CalendarScreen(state: AppState, modifier: Modifier = Modifier) {
     val selected = state.selectedEpochDay
     val selectedDate = PersianCalendar.fromEpochDay(selected)
     val mode = state.calendarMode
+    var yearView by rememberSaveable { mutableStateOf(false) }
 
     val monthStart: Long
     val monthLength: Int
@@ -176,6 +181,28 @@ fun CalendarScreen(state: AppState, modifier: Modifier = Modifier) {
             }
         }
 
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MonthChip(
+                    title = "نمای ماه",
+                    selected = !yearView,
+                    onClick = { yearView = false }
+                )
+                Spacer(Modifier.width(6.dp))
+                MonthChip(
+                    title = "نمای سال",
+                    selected = yearView,
+                    onClick = { yearView = true }
+                )
+            }
+        }
+
         if (mode == CalendarMode.SOLAR) {
             item {
                 LazyRow(
@@ -196,29 +223,51 @@ fun CalendarScreen(state: AppState, modifier: Modifier = Modifier) {
             }
         }
 
-        item {
-            WeekdayHeader(weekOrder = weekOrder, state = state)
-        }
+        if (yearView && mode == CalendarMode.SOLAR) {
+            items(12) { index ->
+                YearMonthCard(
+                    year = state.viewYear,
+                    month = index + 1,
+                    state = state,
+                    selected = selected,
+                    today = today,
+                    onSelect = { state.selectedEpochDay = it }
+                )
+            }
+        } else {
+            item {
+                WeekdayHeader(weekOrder = weekOrder, state = state)
+            }
 
-        items(6) { week ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 7.dp)
-            ) {
-                for (column in 0 until 7) {
-                    val epochDay = gridStart + week * 7 + column
-                    DayCell(
-                        epochDay = epochDay,
-                        inMonth = epochDay in monthStart until (monthStart + monthLength),
-                        state = state,
-                        events = eventsMap[epochDay].orEmpty(),
-                        isSelected = epochDay == selected,
-                        isToday = epochDay == today,
-                        modifier = Modifier.weight(1f),
-                        onClick = { state.selectedEpochDay = epochDay }
-                    )
+            items(6) { week ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 7.dp)
+                ) {
+                    for (column in 0 until 7) {
+                        val epochDay = gridStart + week * 7 + column
+                        DayCell(
+                            epochDay = epochDay,
+                            inMonth = epochDay in monthStart until (monthStart + monthLength),
+                            state = state,
+                            events = eventsMap[epochDay].orEmpty(),
+                            isSelected = epochDay == selected,
+                            isToday = epochDay == today,
+                            modifier = Modifier.weight(1f),
+                            onClick = { state.selectedEpochDay = epochDay }
+                        )
+                    }
                 }
+            }
+
+            item {
+                WeekStrip(
+                    state = state,
+                    selected = selected,
+                    today = today,
+                    onSelect = { state.selectedEpochDay = it }
+                )
             }
         }
 
@@ -252,6 +301,233 @@ fun CalendarScreen(state: AppState, modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(horizontal = 30.dp, vertical = 18.dp)
             )
+        }
+    }
+}
+
+/**
+ * یک ماه کوچک در «نمای سال»: دوازده ماه در یک نگاه، با نشانگر تعطیل‌ها.
+ */
+@Composable
+private fun YearMonthCard(
+    year: Int,
+    month: Int,
+    state: AppState,
+    selected: Long,
+    today: Long,
+    onSelect: (Long) -> Unit
+) {
+    val palette = LocalGahPalette.current
+    val weekOrder = state.weekOrder()
+    val first = PersianCalendar.toEpochDay(year, month, 1)
+    val length = PersianCalendar.monthLength(year, month)
+    val leading = ((PersianCalendar.weekdayIndex(first) - weekOrder.first()) + 7) % 7
+
+    val holidays = remember(year, month, state.showAstronomy, state.hijriOffset) {
+        val set = HashSet<Long>()
+        for (day in 0 until length) {
+            val epochDay = first + day
+            if (Events.forEpochDay(epochDay, state.showAstronomy).any { it.observance == Observance.PUBLIC }) {
+                set.add(epochDay)
+            }
+        }
+        set
+    }
+
+    val hasEvent = remember(year, month, state.showAstronomy, state.hijriOffset) {
+        val set = HashSet<Long>()
+        for (day in 0 until length) {
+            val epochDay = first + day
+            if (Events.forEpochDay(epochDay, state.showAstronomy).isNotEmpty()) set.add(epochDay)
+        }
+        set
+    }
+
+    GahCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StarMotif(modifier = Modifier.size(12.dp), color = palette.gold)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = PersianText.monthName(month),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = state.digits(length) + " روز",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            for (weekday in weekOrder) {
+                Text(
+                    text = PersianCalendar.WEEKDAY_NAMES_SHORT[weekday],
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (weekday == 6) palette.pomegranate else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        for (week in 0 until 6) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                for (column in 0 until 7) {
+                    val index = week * 7 + column
+                    val epochDay = first - leading + index
+                    val dayNumber = index - leading + 1
+                    if (dayNumber in 1..length) {
+                        val isHoliday = epochDay in holidays
+                        val hasAny = epochDay in hasEvent
+                        MiniDayCell(
+                            text = state.digits(dayNumber),
+                            isSelected = epochDay == selected,
+                            isToday = epochDay == today,
+                            isHoliday = isHoliday,
+                            hasEvent = hasAny,
+                            palette = palette,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelect(epochDay) }
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniDayCell(
+    text: String,
+    isSelected: Boolean,
+    isToday: Boolean,
+    isHoliday: Boolean,
+    hasEvent: Boolean,
+    palette: ir.gahshomar.parsi.ui.GahPalette,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(7.dp)
+    Box(
+        modifier = modifier
+            .padding(1.dp)
+            .clip(shape)
+            .background(if (isSelected) palette.turquoise else Color.Transparent)
+            .then(if (isToday && !isSelected) Modifier.border(1.dp, palette.gold, shape) else Modifier)
+            .clickable { onClick() }
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                color = when {
+                    isSelected -> Color.White
+                    isHoliday -> palette.pomegranate
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 1.dp)
+                    .size(3.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when {
+                            !hasEvent -> Color.Transparent
+                            isSelected -> Color.White
+                            isHoliday -> palette.pomegranate
+                            else -> palette.gold
+                        }
+                    )
+            )
+        }
+    }
+}
+
+/**
+ * نوار هفت روزِ هفتهٔ جاری، با نشانگر مناسبت‌ها.
+ */
+@Composable
+private fun WeekStrip(
+    state: AppState,
+    selected: Long,
+    today: Long,
+    onSelect: (Long) -> Unit
+) {
+    val palette = LocalGahPalette.current
+    val weekOrder = state.weekOrder()
+    val firstWeekday = weekOrder.first()
+    val offset = ((PersianCalendar.weekdayIndex(selected) - firstWeekday) + 7) % 7
+    val weekStart = selected - offset
+
+    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+        SectionTitle("هفتهٔ جاری")
+        Spacer(Modifier.height(4.dp))
+        GahCard {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                for (index in 0 until 7) {
+                    val epochDay = weekStart + index
+                    val dayEvents = remember(epochDay, state.showAstronomy, state.hijriOffset) {
+                        Events.forEpochDay(epochDay, state.showAstronomy)
+                    }
+                    val isHoliday = dayEvents.any { it.observance == Observance.PUBLIC }
+                    val shape = RoundedCornerShape(12.dp)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 2.dp)
+                            .clip(shape)
+                            .background(if (epochDay == selected) palette.headerTop else Color.Transparent)
+                            .then(
+                                if (epochDay == today && epochDay != selected) {
+                                    Modifier.border(1.dp, palette.gold, shape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { onSelect(epochDay) }
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = PersianCalendar.WEEKDAY_NAMES_SHORT[PersianCalendar.weekdayIndex(epochDay)],
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (epochDay == selected) palette.onHeader else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = state.digits(PersianCalendar.fromEpochDay(epochDay).day),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = when {
+                                epochDay == selected -> palette.onHeader
+                                isHoliday -> palette.pomegranate
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        dayEvents.isEmpty() -> Color.Transparent
+                                        epochDay == selected -> palette.gold
+                                        isHoliday -> palette.pomegranate
+                                        else -> palette.gold
+                                    }
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }
