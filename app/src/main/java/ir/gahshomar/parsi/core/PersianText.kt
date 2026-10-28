@@ -48,8 +48,8 @@ object PersianText {
         "${formatDate(date, persian)}، ${weekdayName(date.epochDay)}"
 
     fun formatDateShort(date: PersianDate, persian: Boolean = true): String =
-        "${digits(date.year, persian)}/${digits(date.month.toString().padStart(2, '0'), persian)}/" +
-            digits(date.day.toString().padStart(2, '0'), persian)
+        "${digits(date.year, persian)}/${convertDigits(date.month.toString().padStart(2, '0'), persian)}/" +
+            convertDigits(date.day.toString().padStart(2, '0'), persian)
 
     fun formatGregorian(date: GregorianDate, persian: Boolean = true): String =
         "${digits(date.day, persian)} ${gregorianMonthName(date.month)} ${digits(date.year, persian)}"
@@ -64,7 +64,8 @@ object PersianText {
         val minutes = (dayMillis / 60000L).toInt()
         val hh = minutes / 60
         val mm = minutes % 60
-        return digits(hh.toString().padStart(2, '0'), persian) + ":" + digits(mm.toString().padStart(2, '0'), persian)
+        return convertDigits(hh.toString().padStart(2, '0'), persian) + ":" +
+            convertDigits(mm.toString().padStart(2, '0'), persian)
     }
 
     fun relativeLabel(epochDay: Long, today: Long, persian: Boolean = true): String = when (epochDay - today) {

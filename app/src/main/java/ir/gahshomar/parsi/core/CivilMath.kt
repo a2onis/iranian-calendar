@@ -34,7 +34,7 @@ object CivilMath {
         val h = 5 * g + 2
         val day = (floorMod(h, 153) / 5 + 1).toInt()
         val month = (floorMod(floorDiv(h, 153) + 2, 12) + 1).toInt()
-        val year = (floorDiv(e, 1461) - 4716 + floorDiv(12 + 2 - month, 12)).toInt()
+        val year = (floorDiv(e, 1461) - 4716 + floorDiv((12 + 2 - month).toLong(), 12L)).toInt()
         return GregorianDate(year, month, day)
     }
 

@@ -312,6 +312,8 @@ class AppState(val context: Context) {
 
     // ───────────────────────────────────────── ابزار
     fun digits(value: Int): String = PersianText.digits(value, persianDigits)
+
+    fun digits(value: String): String = PersianText.convertDigits(value, persianDigits)
     fun digits(value: Long): String = PersianText.digits(value, persianDigits)
     fun text(value: String): String = PersianText.convertDigits(value, persianDigits)
 
