@@ -57,7 +57,8 @@ class AppState(val context: Context) {
     var viewMonth by mutableStateOf(PersianCalendar.today().month)
         private set
 
-    var calendarMode by mutableStateOf(CalendarMode.SOLAR)
+    private var calendarModeState by mutableStateOf(CalendarMode.SOLAR)
+    val calendarMode: CalendarMode get() = calendarModeState
 
     /** ماهِ نمایش‌داده‌شده در گاه‌شماری‌های میلادی و قمری */
     var viewGYear by mutableStateOf(PersianCalendar.today().toGregorian().year)
@@ -70,28 +71,26 @@ class AppState(val context: Context) {
         private set
 
     // ───────────────────────────────────────── تنظیمات
-    var themeMode by mutableStateOf(
-        runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM)
-    )
-        private set
+    private var themeModeState by mutableStateOf(runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM))
+    val themeMode: ThemeMode get() = themeModeState
 
-    var persianDigits by mutableStateOf(prefs.getBoolean("persian_digits", true))
-        private set
+    private var persianDigitsState by mutableStateOf(prefs.getBoolean("persian_digits", true))
+    val persianDigits: Boolean get() = persianDigitsState
 
-    var weekStartsSaturday by mutableStateOf(prefs.getBoolean("week_saturday", true))
-        private set
+    private var weekStartsSaturdayState by mutableStateOf(prefs.getBoolean("week_saturday", true))
+    val weekStartsSaturday: Boolean get() = weekStartsSaturdayState
 
-    var hijriOffset by mutableStateOf(prefs.getInt("hijri_offset", 0))
-        private set
+    private var hijriOffsetState by mutableStateOf(prefs.getInt("hijri_offset", 0))
+    val hijriOffset: Int get() = hijriOffsetState
 
-    var showGregorianNumbers by mutableStateOf(prefs.getBoolean("show_gregorian", true))
-        private set
+    private var showGregorianNumbersState by mutableStateOf(prefs.getBoolean("show_gregorian", true))
+    val showGregorianNumbers: Boolean get() = showGregorianNumbersState
 
-    var showZoroastrianDay by mutableStateOf(prefs.getBoolean("show_zoroastrian", true))
-        private set
+    private var showZoroastrianDayState by mutableStateOf(prefs.getBoolean("show_zoroastrian", true))
+    val showZoroastrianDay: Boolean get() = showZoroastrianDayState
 
-    var showAstronomy by mutableStateOf(prefs.getBoolean("show_astronomy", true))
-        private set
+    private var showAstronomyState by mutableStateOf(prefs.getBoolean("show_astronomy", true))
+    val showAstronomy: Boolean get() = showAstronomyState
 
     var notificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", false))
         private set
@@ -102,8 +101,8 @@ class AppState(val context: Context) {
     var notifyMinute by mutableStateOf(prefs.getInt("notify_minute", 0))
         private set
 
-    var eventsOnly by mutableStateOf(prefs.getBoolean("events_only", false))
-        private set
+    private var eventsOnlyState by mutableStateOf(prefs.getBoolean("events_only", false))
+    val eventsOnly: Boolean get() = eventsOnlyState
 
     /** فهرست نشان‌شده‌ها (شناسهٔ مناسبت) */
     var bookmarks by mutableStateOf(prefs.getStringSet("bookmarks", emptySet())!!.toSet())
@@ -219,49 +218,49 @@ class AppState(val context: Context) {
     }
 
     fun setCalendarMode(mode: CalendarMode) {
-        calendarMode = mode
+        calendarModeState = mode
         syncViewsToDate(selectedEpochDay)
     }
 
     // ───────────────────────────────────────── تنظیمات
     fun setThemeMode(mode: ThemeMode) {
-        themeMode = mode
+        themeModeState = mode
         prefs.edit().putString("theme", mode.name).apply()
     }
 
     fun setPersianDigits(value: Boolean) {
-        persianDigits = value
+        persianDigitsState = value
         prefs.edit().putBoolean("persian_digits", value).apply()
     }
 
     fun setWeekStartsSaturday(value: Boolean) {
-        weekStartsSaturday = value
+        weekStartsSaturdayState = value
         prefs.edit().putBoolean("week_saturday", value).apply()
     }
 
     fun setHijriOffset(value: Int) {
         val v = value.coerceIn(-3, 3)
-        hijriOffset = v
+        hijriOffsetState = v
         prefs.edit().putInt("hijri_offset", v).apply()
     }
 
     fun setShowGregorianNumbers(value: Boolean) {
-        showGregorianNumbers = value
+        showGregorianNumbersState = value
         prefs.edit().putBoolean("show_gregorian", value).apply()
     }
 
     fun setShowZoroastrianDay(value: Boolean) {
-        showZoroastrianDay = value
+        showZoroastrianDayState = value
         prefs.edit().putBoolean("show_zoroastrian", value).apply()
     }
 
     fun setShowAstronomy(value: Boolean) {
-        showAstronomy = value
+        showAstronomyState = value
         prefs.edit().putBoolean("show_astronomy", value).apply()
     }
 
     fun setEventsOnly(value: Boolean) {
-        eventsOnly = value
+        eventsOnlyState = value
         prefs.edit().putBoolean("events_only", value).apply()
     }
 
