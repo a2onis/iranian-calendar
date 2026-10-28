@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: apk-${{ github.ref }}
@@ -55,6 +56,19 @@ jobs:
           name: گزارش-آزمون
           path: app/build/reports/tests/
           if-no-files-found: ignore
+
+      - name: گزارش خطاها در گفت‌وگوی Pull Request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "### نتیجهٔ ساخت: ناموفق"
+            echo '```'
+            grep -E "^e: |^w: .*(error|unresolved)|error:|Unresolved reference|FAILURE|Execution failed|Caused by" build-log.txt | head -60
+            echo '```'
+          } > comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
 
       - name: نام‌گذاری APK
         run: |
