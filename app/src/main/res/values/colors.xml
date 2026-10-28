@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="parchment">#FAF3E7</color>
+    <color name="night_blue">#0D1424</color>
+    <color name="lapis_deep">#152A54</color>
+    <color name="gold">#C8952E</color>
+    <color name="turquoise">#0E8C82</color>
+    <color name="ic_launcher_background">#152A54</color>
+</resources>

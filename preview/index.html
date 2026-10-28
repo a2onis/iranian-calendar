@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#152A54" />
+<title>گاهشمار پارسی — تقویم ایران و آیین‌های کهن</title>
+<meta name="description" content="پیش‌نمایش وب برنامهٔ اندروید «گاهشمار پارسی»: تقویم خورشیدی، مناسبت‌های ایران باستان، آیین‌های زرتشتی و فرهنگ ایرانی — کاملاً آفلاین." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="stage">
+  <div class="stage__side stage__side--right" aria-hidden="true"></div>
+  <div class="stage__side stage__side--left" aria-hidden="true"></div>
+
+  <div class="device" id="device">
+    <div class="statusbar">
+      <span class="statusbar__time" id="status-time">۱۲:۰۰</span>
+      <span class="statusbar__icons" aria-hidden="true">
+        <svg width="15" height="11" viewBox="0 0 15 11"><rect x="0" y="7" width="2.4" height="4" rx=".7" fill="currentColor"/><rect x="3.6" y="5" width="2.4" height="6" rx=".7" fill="currentColor"/><rect x="7.2" y="2.6" width="2.4" height="8.4" rx=".7" fill="currentColor"/><rect x="10.8" y="0" width="2.4" height="11" rx=".7" fill="currentColor" opacity=".45"/></svg>
+        <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="1" width="13" height="9" rx="2.4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="1.8" y="2.8" width="8" height="5.4" rx="1" fill="currentColor"/><rect x="14" y="3.6" width="1.6" height="3.8" rx=".8" fill="currentColor"/></svg>
+      </span>
+    </div>
+
+    <main class="app" id="app"><!-- محتوا با جاوااسکریپت ساخته می‌شود --></main>
+
+    <nav class="tabbar" id="tabbar" aria-label="بخش‌های اصلی"></nav>
+  </div>
+</div>
+
+<div class="sheet-layer" id="sheet-layer" aria-live="polite"></div>
+
+<script src="calendar.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
