@@ -118,10 +118,10 @@ class IranianCalendarTest {
 
         val mehregan = IranianCalendar.fromEpochDay(IranianCalendar.toEpochDay(1404, 7, 16))
         assertEquals("مهر", mehregan.dayName)
-        assertEquals("2025-10-08", gregorian(mehregan.epochDay))
+        assertEquals("2025-10-02", gregorian(mehregan.epochDay))
 
         assertEquals(
-            "2025-10-02",
+            "2025-09-26",
             gregorian(IranianCalendar.toEpochDay(1404, 7, 10))
         )
     }
@@ -172,11 +172,13 @@ class IranianCalendarTest {
 
     @Test
     fun chaharshanbeSuriIsTheLastTuesdayEveningBeforeNowruz() {
+        // شامگاه آخرین سه‌شنبهٔ پیش از نوروز؛ «شبِ چهارشنبه» و در پایان سالِ پیشین
         for (year in 1398..1410) {
             val suri = Festivals.lastWednesdayBeforeNowruz(year)
             assertTrue(suri < IranianCalendar.yearStart(year))
             assertTrue(suri > IranianCalendar.yearStart(year) - 10)
-            assertEquals(3, IranianCalendar.weekdayIndex(suri)) // چهارشنبه
+            assertEquals("سه‌شنبه", IranianCalendar.weekdayName(suri))
+            assertEquals(year - 1, IranianCalendar.yearOf(suri))
             assertTrue(Festivals.onEpochDay(suri).any { it.id == "chaharshanbe-suri" })
         }
         assertEquals(

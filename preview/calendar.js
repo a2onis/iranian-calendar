@@ -364,7 +364,7 @@ if (typeof module !== 'undefined' && module.exports) {
     switch (rule.type) {
       case 'monthDay': return toEpochDay(year, rule.month, rule.day);
       case 'panjeh': return panjehStart(year);
-      case 'lastWednesday': return lastWednesdayBeforeNowruz(year);
+      case 'lastWednesday': return lastWednesdayBeforeNowruz(year + 1);
       case 'winterSolstice': return winterSolsticeDay(year);
       default: return null;
     }
@@ -388,7 +388,7 @@ if (typeof module !== 'undefined' && module.exports) {
       } else if (rule.type === 'panjeh') {
         if (date.panjehIndex === 1) out.push(f);
       } else if (rule.type === 'lastWednesday') {
-        if (epochDay === lastWednesdayBeforeNowruz(year)) out.push(f);
+        if (epochDay === lastWednesdayBeforeNowruz(year + 1)) out.push(f);
       } else if (rule.type === 'winterSolstice') {
         if (epochDay === winterSolsticeDay(year)) out.push(f);
       }

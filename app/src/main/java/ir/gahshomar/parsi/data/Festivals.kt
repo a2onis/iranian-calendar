@@ -237,7 +237,7 @@ object Festivals {
         when (val rule = festival.rule) {
             is FestivalRule.MonthDay -> !date.isPanjeh && date.month == rule.month && date.day == rule.day
             FestivalRule.Panjeh -> date.isPanjeh && date.panjehIndex == 1
-            FestivalRule.LastWednesday -> epochDay == lastWednesdayBeforeNowruz(year)
+            FestivalRule.LastWednesday -> epochDay == lastWednesdayBeforeNowruz(year + 1)
             FestivalRule.WinterSolstice -> epochDay == winterSolsticeDay(year)
         }
 
@@ -245,7 +245,7 @@ object Festivals {
     fun dateInYear(festival: Festival, year: Int): Long? = when (val rule = festival.rule) {
         is FestivalRule.MonthDay -> IranianCalendar.toEpochDay(year, rule.month, rule.day)
         FestivalRule.Panjeh -> IranianCalendar.panjehStart(year)
-        FestivalRule.LastWednesday -> lastWednesdayBeforeNowruz(year)
+        FestivalRule.LastWednesday -> lastWednesdayBeforeNowruz(year + 1)
         FestivalRule.WinterSolstice -> winterSolsticeDay(year)
     }
 
@@ -258,7 +258,10 @@ object Festivals {
     fun ofMonth(year: Int, month: Int): List<FestivalOccurrence> =
         ofYear(year).filter { IranianCalendar.fromEpochDay(it.epochDay).month == month }
 
-    /** آخرین چهارشنبه پیش از نوروز */
+    /**
+     * شامگاه آخرین سه‌شنبه پیش از نوروز [year] — «چهارشنبه‌سوری».
+     * این آیین در پایان سالِ پیشین برگزار می‌شود.
+     */
     fun lastWednesdayBeforeNowruz(year: Int): Long {
         var day = IranianCalendar.yearStart(year) - 1
         while (IranianCalendar.weekdayIndex(day) != 3) day--
