@@ -52,9 +52,11 @@ object IranianCalendar {
         "ترازو", "کژدم", "کمان", "بزغاله", "دلو", "دوماهی"
     )
 
-    /** نام روزهای هفته، از شنبه */
-    val WEEKDAY_NAMES = PersianCalendar.WEEKDAY_NAMES
-    val WEEKDAY_NAMES_SHORT = PersianCalendar.WEEKDAY_NAMES_SHORT
+    /** نام روزهای هفته، از شنبه؛ آدینه نام ایرانی جمعه است */
+    val WEEKDAY_NAMES = arrayOf(
+        "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "آدینه"
+    )
+    val WEEKDAY_NAMES_SHORT = arrayOf("ش", "ی", "د", "س", "چ", "پ", "ج")
 
     fun monthName(month: Int): String = MONTH_NAMES[(month - 1).coerceIn(0, 11)]
 
@@ -126,7 +128,7 @@ object IranianCalendar {
     /** ۰ = شنبه … ۶ = آدینه */
     fun weekdayIndex(epochDay: Long): Int = PersianCalendar.weekdayIndex(epochDay)
 
-    fun weekdayName(epochDay: Long): String = PersianCalendar.weekdayName(epochDay)
+    fun weekdayName(epochDay: Long): String = WEEKDAY_NAMES[weekdayIndex(epochDay)]
 
     fun isFriday(epochDay: Long): Boolean = weekdayIndex(epochDay) == 6
 

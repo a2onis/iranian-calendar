@@ -71,7 +71,12 @@ jobs:
             else
               echo "### نتیجهٔ ساخت: ناموفق ❌"
               echo '```'
-              grep -E "^e: |error:|Unresolved reference|FAILURE|Execution failed|Caused by" build-log.txt | head -60
+              grep -E "^e: |error:|Unresolved reference|FAILURE|Execution failed|Caused by|FAILED|AssertionError|expected:|Test >" build-log.txt | head -80
+              echo ""
+              echo "--- آزمون‌های ناموفق ---"
+              find app/build/test-results -name "*.xml" -exec grep -l "<failure" {} \; 2>/dev/null | head -3 | while read -r f; do
+                grep -oE 'testcase name="[^"]+"|<failure message="[^"]{0,400}' "$f" | head -20
+              done
               echo '```'
             fi
           } > comment.md

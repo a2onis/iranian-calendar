@@ -13,7 +13,8 @@
   const TEHRAN_MS = 3.5 * 3600 * 1000;
   const TODAY = Math.floor((Date.now() + TEHRAN_MS) / DAY_MS);
 
-  const SHORT_WEEK = C.WEEKDAYS_SHORT;
+  const SHORT_WEEK = D.weekdayShort;
+  const WEEK = D.weekdays;
   const KIND_LABEL = { JASHN: 'جشن', AYIN: 'آیین', GAHAMBAR: 'گاهنبار', YADBUD: 'یادبود' };
   const KIND_CLASS = { JASHN: 'jashn', AYIN: 'ayin', GAHAMBAR: 'gahambar', YADBUD: 'yadbud' };
 
@@ -42,7 +43,7 @@
   const pad2 = (n) => String(n).padStart(2, '0');
 
   const date = () => I.fromEpochDay(state.selected);
-  const weekdayName = (epoch) => C.WEEKDAYS[C.weekdayIndex(epoch)];
+  const weekdayName = (epoch) => WEEK[C.weekdayIndex(epoch)];
 
   function icons(name, size) {
     const s = size || 18;

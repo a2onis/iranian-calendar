@@ -237,15 +237,14 @@ def parse_festivals():
 
 def parse_calendar_data():
     source = read('core/IranianCalendar.kt')
-    weekdays = read('core/PersianCalendar.kt')
     return {
         'months': array_from(source, 'MONTH_NAMES'),
         'dayNames': array_from(source, 'DAY_NAMES'),
         'dayMeanings': array_from(source, 'DAY_MEANINGS'),
         'gathas': array_from(source, 'GATHA_NAMES'),
         'signs': array_from(source, 'MONTH_SIGNS'),
-        'weekdays': array_from(weekdays, 'WEEKDAY_NAMES'),
-        'weekdayShort': array_from(weekdays, 'WEEKDAY_NAMES_SHORT'),
+        'weekdays': array_from(source, 'WEEKDAY_NAMES'),
+        'weekdayShort': array_from(source, 'WEEKDAY_NAMES_SHORT'),
     }
 
 
