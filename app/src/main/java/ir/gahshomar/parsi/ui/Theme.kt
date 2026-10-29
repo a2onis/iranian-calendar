@@ -138,9 +138,3 @@ fun GahshomarTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
         )
     }
 }
-
-// ── سازگاری نام‌های کهن با نام‌های تازه (برای نقش‌مایه‌ها)
-val GoldLight: Color get() = GoldBright
-val TurquoiseLight: Color get() = TurquoiseBright
-val GoldAccent: Color get() = Gold
-val NightBlue: Color get() = LapisDeep

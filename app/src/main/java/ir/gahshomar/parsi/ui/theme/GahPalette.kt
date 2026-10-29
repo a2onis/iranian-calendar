@@ -49,7 +49,7 @@ data class GahPalette(
     val onGold: Color
 )
 
-private val DarkPalette = GahPalette(
+val DarkPalette = GahPalette(
     gold = GoldBright,
     goldSoft = Color(0xFF3B3324),
     turquoise = TurquoiseBright,
@@ -65,7 +65,7 @@ private val DarkPalette = GahPalette(
     onGold = Color(0xFF1A1305)
 )
 
-private val LightPalette = GahPalette(
+val LightPalette = GahPalette(
     gold = GoldDeep,
     goldSoft = Color(0xFFF5E6C2),
     turquoise = TurquoiseDeep,

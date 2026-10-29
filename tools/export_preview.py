@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-استخراج محتوای برنامهٔ اندروید (Kotlin) و ساخت فایل داده برای پیش‌نمایش وب.
-این ابزار متن کاتلین را «می‌خواند» تا داده‌های پیش‌نمایش، همان داده‌های واقعی برنامه باشند.
+استخراج دادهٔ گاه‌شمار ایرانی از کد کاتلین و ساخت فایل دادهٔ پیش‌نمایش وب.
+این ابزار متن کاتلین را «می‌خواند» تا دادهٔ پیش‌نمایش، همان دادهٔ واقعی برنامه باشد.
 """
 import json
 import os
@@ -19,7 +19,7 @@ def read(name):
         return f.read()
 
 
-def find_calls(src, name, require_newline=False):
+def find_calls(src, name):
     """یافتن همهٔ فراخوانی‌های name(...) با پرانتزهای متوازن."""
     results = []
     pattern = r'(?<![\w.])' + re.escape(name) + r'\s*\('
@@ -58,9 +58,7 @@ def split_top(text, sep=','):
     in_str = False
     esc = False
     current = []
-    i = 0
-    while i < len(text):
-        ch = text[i]
+    for ch in text:
         if in_str:
             current.append(ch)
             if esc:
@@ -84,7 +82,6 @@ def split_top(text, sep=','):
                 current = []
             else:
                 current.append(ch)
-        i += 1
     if ''.join(current).strip():
         parts.append(''.join(current))
     return [p.strip() for p in parts if p.strip()]
@@ -133,9 +130,8 @@ def eval_string(expr):
     expr = expr.strip()
     if expr == 'null':
         return None
-    parts = split_concat(expr)
     out = []
-    for p in parts:
+    for p in split_concat(expr):
         p = p.strip()
         if len(p) >= 2 and p.startswith('"') and p.endswith('"'):
             out.append(unescape(p[1:-1]))
@@ -153,33 +149,23 @@ def eval_value(expr):
         return int(expr)
     if re.fullmatch(r'-?\d+L', expr):
         return int(expr[:-1])
+    if expr.startswith('arrayOf(') and expr.endswith(')'):
+        return [eval_value(x) for x in split_top(expr[len('arrayOf('):-1])]
     if expr.startswith('listOf(') and expr.endswith(')'):
-        inner = expr[len('listOf('):-1]
-        items = []
-        for part in split_top(inner):
-            if ' to ' in part:
-                left, right = part.split(' to ', 1)
-                items.append([eval_value(left), eval_value(right)])
-            else:
-                items.append(eval_value(part))
-        return items
-    if re.fullmatch(r'[A-Za-z_][\w.]*', expr):
-        if '.' in expr:
-            return expr.split('.')[-1]
-        return expr
-    m = re.fullmatch(r'DateRule\.(\w+)\((.*)\)', expr, re.S)
+        return [eval_value(x) for x in split_top(expr[len('listOf('):-1])]
+    m = re.fullmatch(r'([A-Za-z_][\w.]*)\(([\s\S]*)\)', expr)
     if m:
-        kind, args = m.group(1), split_top(m.group(2))
-        return {'type': kind, 'args': [eval_value(a) for a in args]}
+        return {'call': m.group(1), 'args': [eval_value(a) for a in split_top(m.group(2))]}
+    if re.fullmatch(r'[A-Za-z_][\w.]*', expr):
+        return expr.split('.')[-1]
     return None
 
 
 def parse_args(argtext, positional_names):
-    """تبدیل متن آرگومان‌ها به دیکشنری (پشتیبانی از آرگومان‌های نام‌دار)."""
     result = {}
     position = 0
     for part in split_top(argtext):
-        m = re.match(r'^([A-Za-z_]\w*)\s*=\s*(.*)$', part, re.S)
+        m = re.match(r'^([A-Za-z_]\w*)\s*=\s*([\s\S]*)$', part)
         if m:
             result[m.group(1)] = eval_value(m.group(2))
         else:
@@ -189,168 +175,92 @@ def parse_args(argtext, positional_names):
     return result
 
 
-def parse_events():
-    src = read('data/EventData.kt')
-    events = []
-    for name, mapping in (
-        ('solar', ['id', 'title', 'month', 'day', 'category', 'observance', 'summary', 'detail', 'articleId']),
-        ('western', ['id', 'title', 'month', 'day', 'category', 'summary', 'detail']),
-        ('moment', ['id', 'title', 'quarter', 'summary', 'detail']),
-        ('Event', ['id', 'title', 'rule', 'category', 'observance', 'summary', 'detail', 'articleId']),
-    ):
-        for argtext in find_calls(src, name):
-            args = parse_args(argtext, mapping)
-            if 'rule' in args and isinstance(args.get('rule'), dict) and args['rule'].get('type') == 'Solar':
-                rule = {'type': 'solar', 'month': args['rule']['args'][0], 'day': args['rule']['args'][1]}
-            elif 'rule' in args and isinstance(args.get('rule'), dict) and args['rule'].get('type') == 'Western':
-                rule = {'type': 'western', 'month': args['rule']['args'][0], 'day': args['rule']['args'][1]}
-            elif 'rule' in args and isinstance(args.get('rule'), dict) and args['rule'].get('type') == 'SolarMomentRule':
-                rule = {'type': 'moment', 'quarter': args['rule']['args'][0]}
-            elif 'rule' in args and args.get('rule') == 'ChaharshanbeSuri':
-                rule = {'type': 'chaharshanbe'}
-            elif 'month' in args and 'day' in args:
-                rule = {'type': 'solar' if name == 'solar' else 'western',
-                        'month': args['month'], 'day': args['day']}
-            elif 'quarter' in args:
-                rule = {'type': 'moment', 'quarter': args['quarter']}
+def array_from(text, name):
+    """خواندن آرایه‌ای از رشته‌ها مثل val NAME = arrayOf(...)"""
+    m = re.search(r'val ' + name + r'\s*=\s*arrayOf\(([\s\S]*?)\)\s*\n', text)
+    if not m:
+        return []
+    return [eval_string(x) for x in split_top(m.group(1))]
+
+
+def parse_festivals():
+    """۲۶ جشن و آیین از data/Festivals.kt"""
+    src = read('data/Festivals.kt')
+    festivals = []
+    for argtext in find_calls(src, 'Festival'):
+        args = parse_args(argtext, ['id', 'name', 'rule', 'kind', 'summary', 'detail'])
+        festival_id = args.get('id')
+        if not festival_id or not re.fullmatch(r'[a-z0-9-]{2,}', str(festival_id)):
+            continue
+        rule = args.get('rule')
+        if isinstance(rule, dict):
+            call = rule.get('call', '')
+            rule_args = rule.get('args') or []
+            if call.endswith('MonthDay'):
+                parsed_rule = {'type': 'monthDay', 'month': rule_args[0], 'day': rule_args[1]}
+            elif call.endswith('Panjeh'):
+                parsed_rule = {'type': 'panjeh'}
+            elif call.endswith('LastWednesday'):
+                parsed_rule = {'type': 'lastWednesday'}
+            elif call.endswith('WinterSolstice'):
+                parsed_rule = {'type': 'winterSolstice'}
             else:
                 continue
-            if not args.get('id'):
+        elif isinstance(rule, str):
+            if rule.endswith('Panjeh'):
+                parsed_rule = {'type': 'panjeh'}
+            elif rule.endswith('LastWednesday'):
+                parsed_rule = {'type': 'lastWednesday'}
+            elif rule.endswith('WinterSolstice'):
+                parsed_rule = {'type': 'winterSolstice'}
+            else:
                 continue
-            # رد کردن بقایای تجزیه (مثل امضای توابع یا سرآیند کلاس)
-            if not re.fullmatch(r'[a-z0-9-]{2,}', str(args.get('id'))):
-                continue
-            if args.get('title') in (None, '', 'title'):
-                continue
-            if name == 'moment' and args.get('month') is None:
-                args['category'] = 'NATURE'
-            events.append({
-                'id': args.get('id'),
-                'title': args.get('title'),
-                'rule': rule,
-                'category': args.get('category'),
-                'observance': args.get('observance') or 'NONE',
-                'summary': args.get('summary') or '',
-                'detail': args.get('detail') or '',
-                'articleId': args.get('articleId'),
-            })
-    # حذف تکرارها بر پایهٔ شناسه
-    seen = {}
-    for event in events:
-        seen.setdefault(event['id'], event)
-    return list(seen.values())
+        else:
+            continue
+        festivals.append({
+            'id': festival_id,
+            'name': args.get('name') or '',
+            'rule': parsed_rule,
+            'kind': args.get('kind') or 'JASHN',
+            'summary': args.get('summary') or '',
+            'detail': args.get('detail') or '',
+        })
+    seen = set()
+    unique = []
+    for festival in festivals:
+        if festival['id'] in seen:
+            continue
+        seen.add(festival['id'])
+        unique.append(festival)
+    return unique
 
 
-def parse_articles():
-    files = ['data/ArticlesNowruz.kt', 'data/ArticlesZoroastrian.kt',
-             'data/ArticlesAncient.kt', 'data/ArticlesCulture.kt']
-    articles = []
-    for file in files:
-        src = read(file)
-        for argtext in find_calls(src, 'Article'):
-            args = parse_args(argtext, [])
-            if not args.get('id'):
-                continue
-            articles.append({
-                'id': args.get('id'),
-                'title': args.get('title') or '',
-                'subtitle': args.get('subtitle') or '',
-                'category': args.get('category') or 'CULTURE',
-                'paragraphs': [p for p in (args.get('paragraphs') or []) if isinstance(p, str)],
-                'bullets': args.get('bullets') or [],
-                'quote': args.get('quote'),
-                'quoteSource': args.get('quoteSource'),
-            })
-    return articles
-
-
-def parse_timeline():
-    src = read('data/Timeline.kt')
-    entries = []
-    for argtext in find_calls(src, 'TimelineEntry'):
-        args = parse_args(argtext, ['year', 'title', 'text', 'era'])
-        if args.get('year'):
-            entries.append({
-                'year': args.get('year'),
-                'title': args.get('title') or '',
-                'text': args.get('text') or '',
-                'era': args.get('era') or 'MYTHIC',
-            })
-    return entries
-
-
-def parse_quotes():
-    src = read('data/Quotes.kt')
-    quotes = []
-    for argtext in find_calls(src, 'Quote'):
-        args = parse_args(argtext, ['text', 'source', 'category'])
-        if args.get('text'):
-            quotes.append(args)
-    return quotes
-
-
-def parse_arrays():
-    source = read('core/PersianCalendar.kt')
-    other = read('core/OtherCalendars.kt')
-
-    def array_from(text, name):
-        m = re.search(r'val ' + name + r'\s*=\s*arrayOf\((.*?)\)\n', text, re.S)
-        if not m:
-            m = re.search(r'val ' + name + r'\s*=\s*arrayOf\(([\s\S]*?)\)\s*\n', text)
-        if not m:
-            return []
-        return [eval_string(x) for x in split_top(m.group(1))]
-
-    def list_strings(text, name):
-        m = re.search(r'val ' + name + r'\s*=\s*listOf\(([\s\S]*?)\)\s*\n\n', text)
-        if not m:
-            return []
-        return [eval_string(x) for x in split_top(m.group(1))]
-
-    zoro_section = other[other.find('object ZoroastrianCalendar'):]
-    data = {
+def parse_calendar_data():
+    source = read('core/IranianCalendar.kt')
+    weekdays = read('core/PersianCalendar.kt')
+    return {
         'months': array_from(source, 'MONTH_NAMES'),
-        'avestanMonths': array_from(source, 'MONTH_NAMES_AVESTAN'),
-        'weekdays': array_from(source, 'WEEKDAY_NAMES'),
-        'weekdayShort': array_from(source, 'WEEKDAY_NAMES_SHORT'),
-        'zodiac': array_from(source, 'ZODIAC_NAMES'),
-        'zodiacSigns': array_from(source, 'ZODIAC_SIGNS'),
-        'dayNames': array_from(other, 'DAY_NAMES'),
-        'dayMeanings': array_from(other, 'DAY_MEANINGS'),
-        'zoroastrianMonths': array_from(zoro_section, 'MONTH_NAMES'),
-        'gahs': array_from(other, 'GAHS'),
-        'gregorianMonths': array_from(read('core/PersianText.kt'), 'GREGORIAN_MONTHS'),
-        'hijriMonths': array_from(other[other.find('object HijriCalendar'):other.find('object ZoroastrianCalendar')], 'MONTH_NAMES'),
+        'dayNames': array_from(source, 'DAY_NAMES'),
+        'dayMeanings': array_from(source, 'DAY_MEANINGS'),
+        'gathas': array_from(source, 'GATHA_NAMES'),
+        'signs': array_from(source, 'MONTH_SIGNS'),
+        'weekdays': array_from(weekdays, 'WEEKDAY_NAMES'),
+        'weekdayShort': array_from(weekdays, 'WEEKDAY_NAMES_SHORT'),
     }
-    festivals = []
-    for argtext in find_calls(other, 'FestivalNameDay'):
-        args = parse_args(argtext, ['name', 'month', 'day', 'meaning'])
-        if args.get('name'):
-            festivals.append(args)
-    gahambars = []
-    for argtext in find_calls(other, 'Gahambar'):
-        args = parse_args(argtext, ['name', 'seasonTime', 'creation'])
-        if args.get('name'):
-            gahambars.append(args)
-    data['festivals'] = festivals
-    data['gahambars'] = gahambars
-    return data
 
 
 def main():
-    events = parse_events()
-    articles = parse_articles()
-    timeline = parse_timeline()
-    quotes = parse_quotes()
-    extra = parse_arrays()
+    festivals = parse_festivals()
+    data = parse_calendar_data()
+    data['festivals'] = festivals
 
-    data = {
-        'events': events,
-        'articles': articles,
-        'timeline': timeline,
-        'quotes': quotes,
-    }
-    data.update(extra)
+    if not data['months'] or not data['dayNames'] or not festivals:
+        print('خطا: داده‌ای استخراج نشد.')
+        return 1
+
+    kinds = {}
+    for festival in festivals:
+        kinds[festival['kind']] = kinds.get(festival['kind'], 0) + 1
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w', encoding='utf-8') as f:
@@ -360,13 +270,10 @@ def main():
         json.dump(data, f, ensure_ascii=False, indent=1)
         f.write(';\n')
 
-    print('events:', len(events))
-    print('articles:', len(articles))
-    print('timeline:', len(timeline))
-    print('quotes:', len(quotes))
-    missing = [k for k, v in data.items() if isinstance(v, list) and not v]
-    print('empty:', missing)
+    print('festivals:', len(festivals), kinds)
+    print('months:', len(data['months']), 'days:', len(data['dayNames']))
     print('written to', OUT)
+    return 0
 
 
 if __name__ == '__main__':

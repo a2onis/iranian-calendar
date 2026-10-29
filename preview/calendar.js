@@ -259,3 +259,148 @@
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = (typeof window !== 'undefined' ? window : globalThis).GahCalendar;
 }
+
+/* =========================================================================
+   گاه‌شماری ایرانی — لایهٔ بالای موتور نوروز
+   دوازده ماه سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک در پایان سال.
+   ========================================================================= */
+(function (global) {
+  'use strict';
+  const C = global.GahCalendar;
+  if (!C) return;
+
+  const MONTH_NAMES = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'امرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'سپندارمذ'];
+  const DAY_NAMES = ['اورمزد', 'بهمن', 'اردیبهشت', 'شهریور', 'سپندارمذ', 'خرداد', 'امرداد',
+    'دی به آذر', 'آذر', 'آبان', 'خور', 'ماه', 'تیر', 'گوش', 'دی به مهر',
+    'مهر', 'سروش', 'رشن', 'فروردین', 'بهرام', 'رام', 'باد', 'دی به دین',
+    'دین', 'ارد', 'اشتاد', 'آسمان', 'زامیاد', 'مانتره سپند', 'انارام'];
+  const DAY_MEANINGS = ['خداوند دانا', 'اندیشهٔ نیک', 'بهترین راستی', 'کشور و شهریاری', 'فروتنی و مهر',
+    'کمال و رسایی', 'بی‌مرگی', 'آفریدگار، ماه آتش', 'آتش', 'آب‌ها', 'خورشید', 'ماه',
+    'ستارهٔ باران', 'گوش‌دهندهٔ جهان', 'آفریدگار، ماه مهر', 'پیمان و مهر',
+    'پیام‌آوری و شنوایی', 'دادگری', 'فروهرها', 'پیروزی', 'شادی و آرامش', 'باد',
+    'آفریدگار، ماه دین', 'دین', 'خوشبختی', 'راستی', 'آسمان', 'زمین',
+    'کلام مقدس', 'بی‌کران'];
+  const GATHA_NAMES = ['اهونود', 'اشتود', 'سپنتمد', 'وهوخشتر', 'وهیشتواشت'];
+  const LEAP_GATHA = 'وهیشتواشت دوم';
+
+  const MONTH_DAYS = 30;
+  const MONTHS = 12;
+  const DAY_MS = 86400000;
+  const TEHRAN_MS = 3.5 * 3600 * 1000;
+
+  function yearStart(year) { return C.nowruzEpochDay(year); }
+  function yearLength(year) { return C.yearLength(year); }
+  function panjehLength(year) { return yearLength(year) - MONTHS * MONTH_DAYS; }
+  function monthStart(year, month) { return yearStart(year) + (month - 1) * MONTH_DAYS; }
+  function panjehStart(year) { return yearStart(year) + MONTHS * MONTH_DAYS; }
+  function isLeap(year) { return yearLength(year) === 366; }
+
+  function yearOf(epochDay) {
+    let year = C.epochDayToGregorian(epochDay).year - 621;
+    while (epochDay < yearStart(year)) year--;
+    while (epochDay >= yearStart(year + 1)) year++;
+    return year;
+  }
+
+  function fromEpochDay(epochDay) {
+    const year = yearOf(epochDay);
+    const index = epochDay - yearStart(year);
+    if (index < MONTHS * MONTH_DAYS) {
+      return { year: year, month: Math.floor(index / MONTH_DAYS) + 1, day: (index % MONTH_DAYS) + 1, panjehIndex: 0 };
+    }
+    return { year: year, month: 0, day: 0, panjehIndex: index - MONTHS * MONTH_DAYS + 1 };
+  }
+
+  function toEpochDay(year, month, day, panjehIndex) {
+    if (panjehIndex) return panjehStart(year) + panjehIndex - 1;
+    return yearStart(year) + (month - 1) * MONTH_DAYS + day - 1;
+  }
+
+  function monthName(month) { return MONTH_NAMES[Math.min(Math.max(month - 1, 0), 11)]; }
+  function dayName(day) { return DAY_NAMES[Math.min(Math.max(day - 1, 0), 29)]; }
+  function dayMeaning(day) { return DAY_MEANINGS[Math.min(Math.max(day - 1, 0), 29)]; }
+  function gathaName(index) { return index >= 1 && index <= 5 ? GATHA_NAMES[index - 1] : LEAP_GATHA; }
+
+  function nameOf(date) {
+    return date.panjehIndex ? gathaName(date.panjehIndex) : dayName(date.day);
+  }
+  function meaningOf(date) {
+    return date.panjehIndex ? 'روز گاتها' : dayMeaning(date.day);
+  }
+  function ritualLabel(date) {
+    return date.panjehIndex
+      ? 'روز ' + nameOf(date) + ' از پنجهٔ وهیک'
+      : 'روز ' + nameOf(date) + ' از ' + monthName(date.month) + ' ماه';
+  }
+
+  function gahOfDay(hour) {
+    if (hour <= 5 || hour >= 20 && hour <= 23) return 'اشاهین‌گاه';
+    if (hour <= 11) return 'هاون‌گاه';
+    if (hour <= 15) return 'رپیتون‌گاه';
+    if (hour <= 19) return 'ازیرین‌گاه';
+    return 'ایوی‌سرترون‌گاه';
+  }
+
+  function lastWednesdayBeforeNowruz(year) {
+    let day = yearStart(year) - 1;
+    while (C.weekdayIndex(day) !== 3) day--;
+    return day;
+  }
+
+  function winterSolsticeDay(year) {
+    const start = yearStart(year);
+    const end = yearStart(year + 1);
+    for (const gYear of [year + 621, year + 622]) {
+      const millis = C.momentUtcMillis(gYear, 3);
+      const day = Math.floor((millis + TEHRAN_MS) / DAY_MS);
+      if (day >= start && day < end) return day;
+    }
+    return toEpochDay(year, 10, 10);
+  }
+
+  function dateInYear(festival, year) {
+    const rule = festival.rule;
+    switch (rule.type) {
+      case 'monthDay': return toEpochDay(year, rule.month, rule.day);
+      case 'panjeh': return panjehStart(year);
+      case 'lastWednesday': return lastWednesdayBeforeNowruz(year);
+      case 'winterSolstice': return winterSolsticeDay(year);
+      default: return null;
+    }
+  }
+
+  function festivalsOfYear(festivals, year) {
+    return festivals
+      .map(f => ({ festival: f, epochDay: dateInYear(f, year) }))
+      .filter(item => item.epochDay !== null && item.epochDay !== undefined)
+      .sort((a, b) => a.epochDay - b.epochDay);
+  }
+
+  function festivalsOn(festivals, epochDay) {
+    const date = fromEpochDay(epochDay);
+    const year = date.year;
+    const out = [];
+    festivals.forEach(f => {
+      const rule = f.rule;
+      if (rule.type === 'monthDay') {
+        if (!date.panjehIndex && date.month === rule.month && date.day === rule.day) out.push(f);
+      } else if (rule.type === 'panjeh') {
+        if (date.panjehIndex === 1) out.push(f);
+      } else if (rule.type === 'lastWednesday') {
+        if (epochDay === lastWednesdayBeforeNowruz(year)) out.push(f);
+      } else if (rule.type === 'winterSolstice') {
+        if (epochDay === winterSolsticeDay(year)) out.push(f);
+      }
+    });
+    return out;
+  }
+
+  global.Iranian = {
+    MONTH_NAMES, DAY_NAMES, DAY_MEANINGS, GATHA_NAMES, MONTH_DAYS, MONTHS,
+    yearStart, yearLength, panjehLength, monthStart, panjehStart, isLeap, yearOf,
+    fromEpochDay, toEpochDay, monthName, dayName, dayMeaning, gathaName,
+    nameOf, meaningOf, ritualLabel, gahOfDay, lastWednesdayBeforeNowruz,
+    winterSolsticeDay, dateInYear, festivalsOfYear, festivalsOn
+  };
+})(typeof window !== 'undefined' ? window : globalThis);

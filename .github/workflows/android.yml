@@ -1,4 +1,4 @@
-name: ساخت APK
+name: ساخت APK گاه‌شمار ایرانی
 
 on:
   push:
@@ -58,55 +58,58 @@ jobs:
           path: app/build/reports/tests/
           if-no-files-found: ignore
 
-      - name: گزارش خطاها در گفت‌وگوی Pull Request
-        if: failure() && github.event_name == 'pull_request'
+      - name: گزارش نتیجه در گفت‌وگوی Pull Request
+        if: always() && github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           {
-            echo "### نتیجهٔ ساخت: ناموفق"
-            echo '```'
-            grep -E "^e: |^w: .*(error|unresolved)|error:|Unresolved reference|FAILURE|Execution failed|Caused by" build-log.txt | head -60
-            echo '```'
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "### نتیجهٔ ساخت: موفق ✅"
+              echo ""
+              echo "APK ساخته شد و آزمون‌های گاه‌شماری گذشتند."
+            else
+              echo "### نتیجهٔ ساخت: ناموفق ❌"
+              echo '```'
+              grep -E "^e: |error:|Unresolved reference|FAILURE|Execution failed|Caused by" build-log.txt | head -60
+              echo '```'
+            fi
           } > comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
 
       - name: نام‌گذاری APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/gahshomar-parsi.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/gahshomar-irani.apk"
 
       - name: بارگذاری APK
         uses: actions/upload-artifact@v4
         with:
-          name: gahshomar-parsi-apk
-          path: dist/gahshomar-parsi.apk
+          name: gahshomar-irani-apk
+          path: dist/gahshomar-irani.apk
           if-no-files-found: error
 
       - name: انتشار برای برچسب‌ها
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: گاه‌شمار پارسی ${{ github.ref_name }}
+          name: گاه‌شمار ایرانی ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          files: dist/gahshomar-parsi.apk
+          files: dist/gahshomar-irani.apk
           body: |
-            **گاه‌شمار پارسی** — تقویم خورشیدی ایران، مناسبت‌های کهن، آیین‌های زرتشتی و فرهنگ ایران.
+            **گاه‌شمار ایرانی** — گاه‌شماری کهن ایران: دوازده ماهِ سی‌روزه، سی روزِ نام‌دار و جشن‌های کهن.
 
             فایل پیوستِ این انتشار، نسخهٔ نصب‌شدنی اندروید است:
 
-            * `gahshomar-parsi.apk` — APK اشکال‌زدایی (debug-signed)، اندروید ۷ (API 24) و بالاتر
+            * `gahshomar-irani.apk` — APK اشکال‌زدایی (debug-signed)، اندروید ۷ (API 24) و بالاتر
             * برای نصب: فایل را روی گوشی بارگیری کنید و «نصب از منابع نامشخص» را برای مرورگر یا مدیر فایل روشن کنید
             * برنامه هیچ مجوز اینترنتی ندارد و کاملاً آفلاین کار می‌کند
 
             ### چه چیزی در برنامه هست
-            * تقویم خورشیدی با محاسبهٔ نجومی رسمی ایران (اعتدال بهاری به وقت تهران)
-            * نمای ماه، نمای سال، نوار هفته و روزنگار کامل هر روز
-            * گاه‌شماری میلادی، هجری قمری، اوستایی و نماد چرخهٔ چینی
-            * ۴۹ مناسبت ایرانی، زرتشتی و ادبی با جست‌وجو و دسته‌بندی
-            * ۵۶ نوشتار در پنج دسته: نوروز و آیین‌ها، دین زرتشتی، ایران باستان، فرهنگ و هنر، گاه‌شماری
-            * خط زمان ۲۹ رویدادی ایران باستان و ۲۴ سخن روز
-            * تبدیل تاریخ، یادداشت روزانه، نشان‌کردن مناسبت‌ها و یادآور روزانه
-            * پوستهٔ روشن و تیره با نقش‌مایه‌های ایرانی؛ تمام‌فارسی و بدون اینترنت
+            * گاه‌شماری ایرانی کهن: دوازده ماهِ سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک
+            * سال از اعتدال بهاری به وقت تهران (محاسبهٔ نجومی رسمی ایران)
+            * ۲۶ جشن و آیین: جشن‌های روز و ماه هم‌نام، گاهنبارها، سده، یلدا، چهارشنبه‌سوری
+            * یک صفحهٔ تمام‌صفحه بدون تب: برگزیدن روز و دیدن جشن‌های همان روز
+            * پوستهٔ تیره (پیش‌فرض)، روشن و هماهنگ با سامانه؛ تمام‌فارسی و بدون اینترنت

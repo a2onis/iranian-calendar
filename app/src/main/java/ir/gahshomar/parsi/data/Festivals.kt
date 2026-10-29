@@ -3,6 +3,7 @@ package ir.gahshomar.parsi.data
 import ir.gahshomar.parsi.core.Astronomy
 import ir.gahshomar.parsi.core.CivilMath
 import ir.gahshomar.parsi.core.IranianCalendar
+import ir.gahshomar.parsi.core.IranianDate
 
 /** قاعدهٔ تکرار یک جشن در سال */
 sealed class FestivalRule {
