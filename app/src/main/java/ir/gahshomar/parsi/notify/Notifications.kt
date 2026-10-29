@@ -10,9 +10,9 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import ir.gahshomar.parsi.MainActivity
 import ir.gahshomar.parsi.R
-import ir.gahshomar.parsi.core.PersianCalendar
+import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.PersianText
-import ir.gahshomar.parsi.data.Events
+import ir.gahshomar.parsi.data.Festivals
 import java.util.Calendar
 
 /** یادآور روزانهٔ مناسبت‌ها؛ کاملاً آفلاین */
@@ -26,10 +26,10 @@ object Notifications {
             val manager = context.getSystemService(NotificationManager::class.java)
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "یادآور مناسبت‌های روز",
+                "یادآور جشن‌های ایرانی",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
-            channel.description = "هر روز، مناسبت‌های ایرانی آن روز را یادآوری می‌کند."
+            channel.description = "هر روز، جشن‌ها و آیین‌های ایرانی آن روز را یادآوری می‌کند."
             manager?.createNotificationChannel(channel)
         }
     }
@@ -66,14 +66,14 @@ object Notifications {
     /** نمایش یادآور امروز */
     fun notifyToday(context: Context) {
         ensureChannel(context)
-        val today = PersianCalendar.todayEpochDay()
-        val date = PersianCalendar.fromEpochDay(today)
-        val events = Events.forEpochDay(today)
-        val title = PersianText.formatDate(date) + "، " + PersianText.weekdayName(today)
-        val body = if (events.isEmpty()) {
-            "امروز مناسبت ویژه‌ای در تقویم نیست؛ روزی خوش داشته باشید."
+        val today = IranianCalendar.todayEpochDay()
+        val date = IranianCalendar.fromEpochDay(today)
+        val festivals = Festivals.onEpochDay(today)
+        val title = PersianText.formatDateWithWeekday(date)
+        val body = if (festivals.isEmpty()) {
+            "امروز جشن ویژه‌ای در گاه‌شمار ایرانی نیست؛ روز ${date.dayName} از ${date.monthName} است."
         } else {
-            events.joinToString(" • ") { it.title }
+            festivals.joinToString(" • ") { it.name }
         }
         val contentIntent = PendingIntent.getActivity(
             context,

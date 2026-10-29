@@ -54,25 +54,3 @@ data class GregorianDate(val year: Int, val month: Int, val day: Int) {
     override fun toString(): String =
         "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
 }
-
-/** تاریخ هجری شمسی (گاه‌شماری خورشیدی ایران) */
-data class PersianDate(val year: Int, val month: Int, val day: Int) {
-    val epochDay: Long get() = PersianCalendar.toEpochDay(this)
-    val monthLength: Int get() = PersianCalendar.monthLength(year, month)
-    val dayOfYear: Int get() = PersianCalendar.dayOfYear(year, month, day)
-    val isValid: Boolean
-        get() = month in 1..12 && day >= 1 && day <= monthLength
-
-    fun plusDays(days: Int): PersianDate = PersianCalendar.fromEpochDay(epochDay + days)
-
-    fun toGregorian(): GregorianDate = CivilMath.epochDayToGregorian(epochDay)
-
-    override fun toString(): String = "$year/$month/$day"
-
-    companion object {
-        fun fromEpochDay(epochDay: Long): PersianDate = PersianCalendar.fromEpochDay(epochDay)
-    }
-}
-
-fun PersianDate(d: GregorianDate): PersianDate = PersianCalendar.fromEpochDay(d.epochDay)
-fun GregorianDate(d: PersianDate): GregorianDate = d.toGregorian()

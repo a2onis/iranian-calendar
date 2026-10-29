@@ -1,16 +1,12 @@
 package ir.gahshomar.parsi.core
 
-import kotlin.math.abs
+import ir.gahshomar.parsi.data.FestivalKind
+import ir.gahshomar.parsi.data.Festivals
 
 /** ابزارهای متن و عدد فارسی */
 object PersianText {
 
     private const val PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹"
-
-    val GREGORIAN_MONTHS = arrayOf(
-        "ژانویه", "فوریه", "مارس", "آوریل", "مه", "ژوئن",
-        "ژوئیه", "اوت", "سپتامبر", "اکتبر", "نوامبر", "دسامبر"
-    )
 
     fun digits(value: Int, persian: Boolean = true): String =
         convertDigits(value.toString(), persian)
@@ -32,30 +28,43 @@ object PersianText {
         return sb.toString()
     }
 
-    fun monthName(month: Int): String = PersianCalendar.MONTH_NAMES[(month - 1).coerceIn(0, 11)]
-    fun monthNameAvestan(month: Int): String = PersianCalendar.MONTH_NAMES_AVESTAN[(month - 1).coerceIn(0, 11)]
-    fun gregorianMonthName(month: Int): String = GREGORIAN_MONTHS[(month - 1).coerceIn(0, 11)]
-    fun hijriMonthName(month: Int): String = HijriCalendar.monthName(month)
+    fun monthName(month: Int): String = IranianCalendar.monthName(month)
 
-    fun weekdayName(epochDay: Long): String = PersianCalendar.WEEKDAY_NAMES[PersianCalendar.weekdayIndex(epochDay)]
+    fun dayName(dayOfMonth: Int): String = IranianCalendar.dayName(dayOfMonth)
 
-    /** «۲۱ فروردین ۱۴۰۴» */
-    fun formatDate(date: PersianDate, persian: Boolean = true): String =
-        "${digits(date.day, persian)} ${monthName(date.month)} ${digits(date.year, persian)}"
+    /** «۶ اردیبهشت ۱۴۰۴» */
+    fun formatDate(date: IranianDate, persian: Boolean = true): String =
+        if (date.isPanjeh) {
+            "${date.dayName}، پنجهٔ ${digits(date.year, persian)}"
+        } else {
+            "${digits(date.day, persian)} ${monthName(date.month)} ${digits(date.year, persian)}"
+        }
 
-    /** «۲۱ فروردین ۱۴۰۴، جمعه» */
-    fun formatDateWithWeekday(date: PersianDate, persian: Boolean = true): String =
-        "${formatDate(date, persian)}، ${weekdayName(date.epochDay)}"
+    /** «۶ اردیبهشت ۱۴۰۴، آدینه» */
+    fun formatDateWithWeekday(date: IranianDate, persian: Boolean = true): String =
+        "${formatDate(date, persian)}، ${IranianCalendar.weekdayName(date.epochDay)}"
 
-    fun formatDateShort(date: PersianDate, persian: Boolean = true): String =
-        "${digits(date.year, persian)}/${convertDigits(date.month.toString().padStart(2, '0'), persian)}/" +
-            convertDigits(date.day.toString().padStart(2, '0'), persian)
+    /** «بهرام روز از اردیبهشت ماه» */
+    fun ritualLabel(date: IranianDate): String = date.ritualLabel
 
-    fun formatGregorian(date: GregorianDate, persian: Boolean = true): String =
-        "${digits(date.day, persian)} ${gregorianMonthName(date.month)} ${digits(date.year, persian)}"
+    /** نام روز و معنای آن: «بهرام — پیروزی» */
+    fun dayWithMeaning(dayOfMonth: Int): String =
+        "${IranianCalendar.dayName(dayOfMonth)} — ${IranianCalendar.dayMeaning(dayOfMonth)}"
 
-    fun formatHijri(date: HijriDate, persian: Boolean = true): String =
-        "${digits(date.day, persian)} ${hijriMonthName(date.month)} ${digits(date.year, persian)}"
+    fun kindLabel(kind: FestivalKind): String = kind.label
+
+    /** «۳۰ روز دیگر» / «امروز» / «۵ روز پیش» */
+    fun daysAway(days: Int, persian: Boolean = true): String = when {
+        days == 0 -> "امروز"
+        days == 1 -> "فردا"
+        days == 2 -> "پس‌فردا"
+        days == -1 -> "دیروز"
+        days > 0 -> "${digits(days, persian)} روز دیگر"
+        else -> "${digits(-days, persian)} روز پیش"
+    }
+
+    fun relativeLabel(epochDay: Long, today: Long, persian: Boolean = true): String =
+        daysAway((epochDay - today).toInt(), persian)
 
     /** ساعت به وقت ایران از یک لحظهٔ UTC */
     fun formatTehranTime(utcMillis: Long, persian: Boolean = true): String {
@@ -68,54 +77,18 @@ object PersianText {
             convertDigits(mm.toString().padStart(2, '0'), persian)
     }
 
-    fun relativeLabel(epochDay: Long, today: Long, persian: Boolean = true): String = when (epochDay - today) {
-        0L -> "امروز"
-        1L -> "فردا"
-        -1L -> "دیروز"
-        2L -> "پس‌فردا"
-        -2L -> "پریروز"
-        else -> ""
-    }
-
-    fun daysUntilLabel(days: Long): String = when {
-        days == 0L -> "امروز"
-        days == 1L -> "۱ روز دیگر"
-        days < 0 -> "${digits(abs(days))} روز پیش"
-        days < 31 -> "${digits(days)} روز دیگر"
-        days < 365 -> "${digits(days / 30)} ماه و ${digits(days % 30)} روز دیگر"
-        else -> "${digits(days / 365)} سال و ${digits((days % 365) / 30)} ماه دیگر"
-    }
-
-    fun ordinal(day: Int): String = digits(day)
-
-    /** تبدیل عدد به واژه برای شمارش روزها و سال‌ها (تا ۹۹) */
-    private val ONES = arrayOf(
-        "", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه",
-        "ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"
-    )
-    private val TENS = arrayOf("", "", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", "نود")
-    private val HUNDREDS = arrayOf("", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد")
-
-    fun numberToWords(number: Int): String {
-        if (number == 0) return "صفر"
-        if (number < 0) return "منفی " + numberToWords(-number)
-        val parts = ArrayList<String>()
-        var n = number
-        if (n >= 1000) {
-            parts.add(numberToWords(n / 1000) + " هزار")
-            n %= 1000
+    /** متن اشتراک‌گذاری یک روز */
+    fun shareText(epochDay: Long, persian: Boolean = true): String {
+        val date = IranianCalendar.fromEpochDay(epochDay)
+        val sb = StringBuilder()
+        sb.append(formatDateWithWeekday(date, persian)).append('\n')
+        sb.append("روز ").append(date.dayName).append(" — ").append(date.dayMeaning)
+        val festivals = Festivals.onEpochDay(epochDay)
+        if (festivals.isNotEmpty()) {
+            sb.append('\n')
+            festivals.forEach { sb.append("• ").append(it.name).append('\n') }
         }
-        if (n >= 100) {
-            parts.add(HUNDREDS[n / 100])
-            n %= 100
-        }
-        if (n in 1..19) {
-            parts.add(ONES[n])
-        } else if (n >= 20) {
-            val t = TENS[n / 10]
-            val o = n % 10
-            parts.add(if (o == 0) t else "$t و ${ONES[o]}")
-        }
-        return parts.joinToString(" و ")
+        sb.append('\n').append("گاه‌شمار ایرانی")
+        return sb.toString()
     }
 }
