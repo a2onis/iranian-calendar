@@ -221,6 +221,9 @@ object Festivals {
     private const val DAY_MILLIS = 86400000L
     private const val TEHRAN_OFFSET_MILLIS = (3.5 * 3600 * 1000).toLong()
 
+    private val yearCache = HashMap<Int, List<FestivalOccurrence>>()
+    private val solsticeCache = HashMap<Int, Long>()
+
     fun byId(id: String): Festival? = ALL.firstOrNull { it.id == id }
 
     /** جشن‌های یک روز از گاه‌شماری ایرانی */
@@ -249,10 +252,15 @@ object Festivals {
         FestivalRule.WinterSolstice -> winterSolsticeDay(year)
     }
 
-    /** فهرست جشن‌های یک سال، به ترتیب روز */
-    fun ofYear(year: Int): List<FestivalOccurrence> = ALL
-        .mapNotNull { festival -> dateInYear(festival, year)?.let { FestivalOccurrence(festival, it) } }
-        .sortedBy { it.epochDay }
+    /** فهرست جشن‌های یک سال، به ترتیب روز (یک بار حساب و نگه داشته می‌شود) */
+    fun ofYear(year: Int): List<FestivalOccurrence> {
+        yearCache[year]?.let { return it }
+        val list = ALL
+            .mapNotNull { festival -> dateInYear(festival, year)?.let { FestivalOccurrence(festival, it) } }
+            .sortedBy { it.epochDay }
+        yearCache[year] = list
+        return list
+    }
 
     /** جشن‌های یک ماه (۱ تا ۱۲) */
     fun ofMonth(year: Int, month: Int): List<FestivalOccurrence> =
@@ -270,15 +278,21 @@ object Festivals {
 
     /** روزی از سال که انقلاب زمستانی در آن رخ می‌دهد */
     fun winterSolsticeDay(year: Int): Long {
+        solsticeCache[year]?.let { return it }
         val start = IranianCalendar.yearStart(year)
         val end = IranianCalendar.yearStart(year + 1)
         for (gregorianYear in intArrayOf(year + 621, year + 622)) {
             val millis = Astronomy.momentUtcMillis(gregorianYear, 3)
             val day = CivilMath.floorDiv(millis + TEHRAN_OFFSET_MILLIS, DAY_MILLIS)
-            if (day in start until end) return day
+            if (day in start until end) {
+                solsticeCache[year] = day
+                return day
+            }
         }
         // در حالت نامنتظره: میانهٔ ماه دی
-        return IranianCalendar.toEpochDay(year, 10, 10)
+        val fallback = IranianCalendar.toEpochDay(year, 10, 10)
+        solsticeCache[year] = fallback
+        return fallback
     }
 
     /** جشن‌هایی که در روزهای آینده می‌آیند */

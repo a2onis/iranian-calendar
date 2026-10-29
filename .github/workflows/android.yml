@@ -38,7 +38,7 @@ jobs:
         run: |
           set -o pipefail
           {
-            gradle :app:assembleDebug --no-daemon --stacktrace
+            gradle :app:assembleRelease --no-daemon --stacktrace
             gradle :app:testDebugUnitTest --no-daemon --stacktrace
           } 2>&1 | tee build-log.txt
 
@@ -85,7 +85,7 @@ jobs:
       - name: نام‌گذاری APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/gahshomar-irani.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/gahshomar-irani.apk"
 
       - name: بارگذاری APK
         uses: actions/upload-artifact@v4
@@ -108,7 +108,7 @@ jobs:
 
             فایل پیوستِ این انتشار، نسخهٔ نصب‌شدنی اندروید است:
 
-            * `gahshomar-irani.apk` — APK اشکال‌زدایی (debug-signed)، اندروید ۷ (API 24) و بالاتر
+            * `gahshomar-irani.apk` — نسخهٔ بهینه‌شده (R8، بدون کد اشکال‌زدایی)، اندروید ۷ (API 24) و بالاتر
             * برای نصب: فایل را روی گوشی بارگیری کنید و «نصب از منابع نامشخص» را برای مرورگر یا مدیر فایل روشن کنید
             * برنامه هیچ مجوز اینترنتی ندارد و کاملاً آفلاین کار می‌کند
 
@@ -118,3 +118,4 @@ jobs:
             * ۲۶ جشن و آیین: جشن‌های روز و ماه هم‌نام، گاهنبارها، سده، یلدا، چهارشنبه‌سوری
             * یک صفحهٔ تمام‌صفحه بدون تب: برگزیدن روز و دیدن جشن‌های همان روز
             * پوستهٔ تیره (پیش‌فرض)، روشن و هماهنگ با سامانه؛ تمام‌فارسی و بدون اینترنت
+            * روز و ماه و جشن‌های امروز، همیشه در نوار وضعیت و بر صفحهٔ قفل

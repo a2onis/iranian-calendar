@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,6 +44,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -254,12 +256,18 @@ private fun TopBar(state: AppState, onToday: () -> Unit, onSettings: () -> Unit)
     ) {
         StarMotif(modifier = Modifier.size(15.dp), color = palette.gold)
         Spacer(Modifier.width(8.dp))
-        Text(
-            text = "گاه‌شمار ایرانی",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "گاه‌شمار ایرانی",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = state.dateLabel(IranianCalendar.fromEpochDay(state.selectedEpochDay)),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         if (state.selectedEpochDay != state.todayEpochDay) {
             Text(
                 text = "امروز",
@@ -377,6 +385,16 @@ private fun ArrowButton(
 @Composable
 private fun MonthRibbon(state: AppState, year: Int, activeMonth: Int) {
     val palette = LocalGahPalette.current
+    val listState = rememberLazyListState()
+    // ماهِ جاری همیشه در دید بماند — به‌ویژه در ماه‌های پایان سال
+    LaunchedEffect(activeMonth) {
+        val target = (activeMonth - 1).coerceIn(0, 11)
+        val visible = listState.layoutInfo.visibleItemsInfo
+        val inView = visible.any { it.index == target }
+        if (!inView) {
+            listState.animateScrollToItem(index = (target - 1).coerceAtLeast(0))
+        }
+    }
     Column {
         Row(
             modifier = Modifier
@@ -407,6 +425,7 @@ private fun MonthRibbon(state: AppState, year: Int, activeMonth: Int) {
             }
         }
         LazyRow(
+            state = listState,
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -856,6 +875,17 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         }
 
         Spacer(Modifier.height(14.dp))
+        SettingSwitch(
+            title = "گاه‌شمار در نوار وضعیت",
+            subtitle = "روز و ماه و جشن‌های امروز، بر صفحهٔ قفل هم دیده می‌شود",
+            checked = state.dayStatusEnabled,
+            onCheckedChange = { enabled ->
+                if (enabled && Build.VERSION.SDK_INT >= 33) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                state.setDayStatus(enabled)
+            }
+        )
         SettingSwitch(
             title = "رقم‌های فارسی",
             subtitle = "نمایش ۱۲۳ به‌جای 123",

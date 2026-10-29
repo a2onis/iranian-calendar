@@ -106,7 +106,7 @@ object IranianCalendar {
         yearStart(date.year) + dayOfYear(date) - 1
 
     fun toEpochDay(year: Int, month: Int, day: Int): Long =
-        toEpochDay(IranianDate(year, month, day))
+        yearStart(year) + (month - 1) * MONTH_DAYS + day - 1
 
     /** تاریخ ایرانیِ یک روز */
     fun fromEpochDay(epochDay: Long): IranianDate {

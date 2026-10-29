@@ -169,7 +169,9 @@
     app.innerHTML = `
       <div class="topbar">
         ${star(15, 'var(--gold)')}
-        <div class="topbar__title">گاه‌شمار ایرانی</div>
+        <div class="topbar__title">گاه‌شمار ایرانی
+          <small>${longDate(d)}</small>
+        </div>
         ${state.selected !== TODAY ? '<button class="topbar__today" data-action="today">امروز</button>' : ''}
         <button class="iconbtn" data-action="settings" aria-label="تنظیمات">${icons('settings', 19)}</button>
       </div>
@@ -226,6 +228,20 @@
       <p class="footer">ماه‌های سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک؛ سال از اعتدال بهاری به وقت تهران آغاز می‌شود.</p>`;
 
     if (keepScroll) app.scrollTop = scrollTop;
+    scrollActiveMonthIntoView();
+  }
+
+  /** ماهِ جاری را میان دوازده ماه پیدا و در دید می‌آورد */
+  function scrollActiveMonthIntoView() {
+    const strip = app.querySelector('.months');
+    const active = app.querySelector('.monthpill--active');
+    if (!strip || !active) return;
+    const target = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+    if (typeof strip.scrollTo === 'function') {
+      strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    } else {
+      strip.scrollLeft = Math.max(0, target);
+    }
   }
 
   /* ─── برگه‌ها ────────────────────────────────────────────────────── */

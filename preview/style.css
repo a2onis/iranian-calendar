@@ -139,6 +139,13 @@ body {
   font-weight: 600;
   letter-spacing: .1px;
   color: var(--ink-soft);
+  line-height: 1.5;
+}
+.topbar__title small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--gold);
 }
 .topbar__today {
   border: 1px solid rgba(240, 206, 126, .55);

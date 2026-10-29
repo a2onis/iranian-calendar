@@ -32,6 +32,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".notify.DayStatusReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".notify.BootReceiver"
             android:exported="false">
             <intent-filter>

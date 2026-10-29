@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
+import ir.gahshomar.parsi.notify.DayStatus
 import ir.gahshomar.parsi.notify.Notifications
 
 enum class ThemeMode(val label: String) {
@@ -45,6 +46,9 @@ class AppState(val context: Context) {
 
     private var todayOnlyState by mutableStateOf(prefs.getBoolean("today_only", true))
     val todayOnly: Boolean get() = todayOnlyState
+
+    private var dayStatusState by mutableStateOf(prefs.getBoolean("day_status", true))
+    val dayStatusEnabled: Boolean get() = dayStatusState
 
     var notificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", false))
         private set
@@ -127,6 +131,18 @@ class AppState(val context: Context) {
     fun setTodayOnly(value: Boolean) {
         todayOnlyState = value
         prefs.edit().putBoolean("today_only", value).apply()
+    }
+
+    /** نوارگاه‌شمار در نوار وضعیت و صفحهٔ قفل */
+    fun setDayStatus(enabled: Boolean) {
+        dayStatusState = enabled
+        prefs.edit().putBoolean("day_status", enabled).apply()
+        DayStatus.refresh(context, enabled)
+    }
+
+    /** هم‌گام‌سازی نوارگاه‌شمار با امروز (هنگام باز شدن برنامه) */
+    fun refreshDayStatus() {
+        if (dayStatusState) runCatching { DayStatus.show(context) }
     }
 
     fun setNotifications(enabled: Boolean, hour: Int = notifyHour, minute: Int = notifyMinute) {
