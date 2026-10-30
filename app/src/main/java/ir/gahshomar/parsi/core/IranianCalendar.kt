@@ -210,7 +210,11 @@ data class IranianDate(
 
     /** «بهرام روز از اردیبهشت ماه» */
     val ritualLabel: String
-        get() = if (isPanjeh) "روز ${dayName} از پنجهٔ وهیک ($day $monthName)" else "روز $dayName از $monthName ماه"
+        get() = if (isPanjeh) {
+            "روز ${dayName} از پنجهٔ وهیک (${PersianText.digits(day)} $monthName)"
+        } else {
+            "روز $dayName از $monthName ماه"
+        }
 
     /** «۶ اردیبهشت ۱۴۰۴» — رقم‌ها لاتین‌اند و در نمایش فارسی می‌شوند */
     fun shortLabel(): String = "$day $monthName $year"

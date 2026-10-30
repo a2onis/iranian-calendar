@@ -95,7 +95,7 @@ class IranianCalendarTest {
                 IranianCalendar.yearLength(year) - 360,
                 IranianCalendar.panjehLength(year)
             )
-            assertEquals(total, 360)
+            assertEquals(IranianCalendar.yearLength(year), total)
         }
     }
 

@@ -341,8 +341,13 @@ if (typeof module !== 'undefined' && module.exports) {
   }
   function ritualLabel(date) {
     return date.panjehIndex
-      ? 'روز ' + nameOf(date) + ' از پنجهٔ وهیک (' + date.day + ' ' + monthName(date.month) + ')'
+      ? 'روز ' + nameOf(date) + ' از پنجهٔ وهیک (' + toPersianDigits(date.day) + ' ' + monthName(date.month) + ')'
       : 'روز ' + nameOf(date) + ' از ' + monthName(date.month) + ' ماه';
+  }
+
+  function toPersianDigits(value) {
+    const fa = '۰۱۲۳۴۵۶۷۸۹';
+    return String(value).replace(/[0-9]/g, d => fa[+d]);
   }
 
   function gahOfDay(hour) {
