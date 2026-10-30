@@ -503,7 +503,9 @@ private fun DayCell(
     val isToday = epochDay == state.todayEpochDay
     val isFriday = IranianCalendar.weekdayIndex(epochDay) == 6
     val shape = RoundedCornerShape(12.dp)
-    val label = if (day > 0) state.digits(day) else "پ" + state.digits(-day)
+    // روزهای پنجه هم با شمارهٔ واقعی خود (۲۵ تا ۲۹/۳۰ سپندارمذ) نشان داده می‌شوند
+    val isPanjehCell = day < 0
+    val label = state.digits(if (day > 0) day else -day)
 
     Column(
         modifier = modifier
@@ -520,6 +522,7 @@ private fun DayCell(
                 when {
                     isSelected -> palette.gold
                     isToday -> palette.turquoise
+                    isPanjehCell -> palette.gold.copy(alpha = 0.55f)
                     else -> MaterialTheme.colorScheme.outlineVariant
                 },
                 shape
@@ -535,6 +538,7 @@ private fun DayCell(
             color = when {
                 isSelected -> palette.onGold
                 isToday -> MaterialTheme.colorScheme.onSecondaryContainer
+                isPanjehCell -> palette.gold
                 isFriday -> palette.pomegranate
                 else -> MaterialTheme.colorScheme.onSurface
             }

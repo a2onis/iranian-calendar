@@ -137,7 +137,7 @@
       if (isToday) classes.push('cell--today');
       if (friday) classes.push('cell--friday');
       if (cell < 0) classes.push('cell--panjeh');
-      const label = cell > 0 ? fa(cell) : 'پ' + fa(-cell);
+      const label = fa(cell > 0 ? cell : -cell);
       const dot = festivalDays.has(epoch) ? '<span class="cell__dot"></span>' : '<span class="cell__dot" style="opacity:0"></span>';
       return `<button class="${classes.join(' ')}" data-day="${epoch}" title="${escapeHtml(longDate(I.fromEpochDay(epoch)))}">${label}${dot}</button>`;
     }).join('');
