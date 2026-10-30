@@ -24,6 +24,7 @@ enum class FestivalKind(val label: String) {
     JASHN("جشن"),
     AYIN("آیین"),
     GAHAMBAR("گاهنبار"),
+    TAJGOZARI("تاج‌گذاری"),
     YADBUD("یادبود")
 }
 
