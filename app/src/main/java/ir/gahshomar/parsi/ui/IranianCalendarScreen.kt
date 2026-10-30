@@ -836,7 +836,7 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted) state.setNotifications(true) }
+    ) { granted -> if (granted && state.dayStatusEnabled) state.showDayStatusWhenClosed() }
 
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 30.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -900,53 +900,6 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             checked = state.persianDigits,
             onCheckedChange = { state.setPersianDigits(it) }
         )
-        SettingSwitch(
-            title = "یادآور روزانه",
-            subtitle = if (state.notificationsEnabled) {
-                "هر روز ساعت ${state.digits(state.notifyHour)}:${state.digits(state.notifyMinute.toString().padStart(2, '0'))}"
-            } else {
-                "بی‌صدا"
-            },
-            checked = state.notificationsEnabled,
-            onCheckedChange = { enabled ->
-                if (enabled) {
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    state.setNotifications(true)
-                } else {
-                    state.setNotifications(false)
-                }
-            }
-        )
-        if (state.notificationsEnabled) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "ساعت یادآور",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                StepperButton(text = "−") {
-                    state.setNotifications(true, (state.notifyHour + 23) % 24, state.notifyMinute)
-                }
-                Text(
-                    text = "${state.digits(state.notifyHour)}:${state.digits(state.notifyMinute.toString().padStart(2, '0'))}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = palette.turquoise,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-                StepperButton(text = "+") {
-                    state.setNotifications(true, (state.notifyHour + 1) % 24, state.notifyMinute)
-                }
-            }
-        }
-
         Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             StarMotif(modifier = Modifier.size(11.dp), color = palette.gold)
@@ -1000,24 +953,6 @@ private fun SettingSwitch(
             )
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun StepperButton(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(RoundedCornerShape(9.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(9.dp))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }
 

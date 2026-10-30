@@ -178,9 +178,9 @@
 
       <div class="hero">
         <div class="hero__row">
-          <div class="hero__day">${d.panjehIndex ? 'پ' + fa(d.panjehIndex) : fa(d.day)}</div>
+          <div class="hero__day">${fa(d.day)}</div>
           <div>
-            <div class="hero__month">${d.panjehIndex ? 'پنجهٔ وهیک' : I.monthName(d.month)} ${fa(d.year)}</div>
+            <div class="hero__month">${I.monthName(d.month)} ${fa(d.year)}</div>
             <div class="hero__meta">${weekdayName(state.selected)}
               ${state.selected === TODAY ? '<span class="hero__dot"></span>' : ''}
             </div>
@@ -190,6 +190,7 @@
             <button class="iconbtn" data-action="next-day" aria-label="روز بعد">${icons('left', 20)}</button>
           </div>
         </div>
+        ${d.panjehIndex ? '<div class="hero__badge">پنجهٔ وهیک</div>' : ''}
         <div class="hero__ritual">${I.ritualLabel(d)}</div>
         <div class="hero__meaning">${I.meaningOf(d)}</div>
       </div>
@@ -215,32 +216,30 @@
         ${upcoming.map((item) => {
       const ud = I.fromEpochDay(item.epochDay);
       return `<div class="uprow" data-day="${item.epochDay}">
-            <div class="uprow__box">${ud.panjehIndex ? 'پ' : fa(ud.day)}</div>
+            <div class="uprow__box">${fa(ud.day)}</div>
             <div>
               <div class="uprow__name">${escapeHtml(item.festival.name)}</div>
-              <div class="uprow__meta">${ud.panjehIndex ? 'پنجهٔ وهیک' : I.monthName(ud.month)} • ${weekdayName(item.epochDay)}</div>
+              <div class="uprow__meta">${I.monthName(ud.month)}${ud.panjehIndex ? ' • پنجهٔ وهیک' : ''} • ${weekdayName(item.epochDay)}</div>
             </div>
             <div class="uprow__away">${daysAway(item.epochDay - TODAY)}</div>
           </div>`;
     }).join('')}
       </div>` : ''}
 
-      <p class="footer">ماه‌های سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک؛ سال از اعتدال بهاری به وقت تهران آغاز می‌شود.</p>`;
+      <p class="footer">ماه‌ها با درازای تقویم ایران، سی روزِ نام‌دار و پنجهٔ وهیک؛ سال از اعتدال بهاری به وقت تهران آغاز می‌شود.</p>`;
 
     if (keepScroll) app.scrollTop = scrollTop;
     scrollActiveMonthIntoView();
   }
 
-  /** ماهِ جاری را میان دوازده ماه پیدا و در دید می‌آورد */
+  /** ماهِ جاری را در ابتدای نوار ماه‌ها می‌آورد (راست‌به‌چپ هم درست کار می‌کند) */
   function scrollActiveMonthIntoView() {
-    const strip = app.querySelector('.months');
     const active = app.querySelector('.monthpill--active');
-    if (!strip || !active) return;
-    const target = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
-    if (typeof strip.scrollTo === 'function') {
-      strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-    } else {
-      strip.scrollLeft = Math.max(0, target);
+    if (!active) return;
+    const strip = active.closest('.months') || app.querySelector('.months');
+    if (!strip) return;
+    if (typeof active.scrollIntoView === 'function') {
+      active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     }
   }
 
@@ -313,8 +312,9 @@
 
       <div class="sheet__label">گاه‌شمار</div>
       <div class="about">
-        گاه‌شمار ایرانی همان گاه‌شمار کهن ایران‌زمین است: دوازده ماهِ سی‌روزه با نام‌های
-        اوستایی، سی روزِ نام‌دار از اورمزد تا انارام، و پنج روز گاتها (پنجهٔ وهیک) در پایان سال.
+        گاه‌شمار ایرانی همان گاه‌شماری است که تاریخ رسمی ایران را نگه می‌دارد و ساختار کهن
+        ایران‌زمین را بر آن می‌نشاند: دوازده ماه با نام‌های اوستایی، سی روزِ نام‌دار از اورمزد
+        تا انارام (روز سی‌ویکم «اَندَرگاه»)، و پنج روز گاتها (پنجهٔ وهیک) از ۲۵ سپندارمذ.
         سال در لحظهٔ اعتدال بهاری به وقت تهران آغاز می‌شود.
         <small>همهٔ داده‌ها در خود برنامه‌اند؛ برنامه هیچ دسترسی اینترنتی ندارد.</small>
       </div>

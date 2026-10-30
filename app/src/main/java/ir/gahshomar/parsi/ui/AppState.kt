@@ -8,7 +8,6 @@ import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.notify.DayStatus
-import ir.gahshomar.parsi.notify.Notifications
 
 enum class ThemeMode(val label: String) {
     DARK("تیره"),
@@ -49,15 +48,6 @@ class AppState(val context: Context) {
 
     private var dayStatusState by mutableStateOf(prefs.getBoolean("day_status", true))
     val dayStatusEnabled: Boolean get() = dayStatusState
-
-    var notificationsEnabled by mutableStateOf(prefs.getBoolean("notifications", false))
-        private set
-
-    var notifyHour by mutableStateOf(prefs.getInt("notify_hour", 8))
-        private set
-
-    var notifyMinute by mutableStateOf(prefs.getInt("notify_minute", 0))
-        private set
 
     // ───────────────────────────────────────── حرکت در تقویم
 
@@ -159,18 +149,6 @@ class AppState(val context: Context) {
             DayStatus.show(context)
             DayStatus.scheduleMidnight(context)
         }
-    }
-
-    fun setNotifications(enabled: Boolean, hour: Int = notifyHour, minute: Int = notifyMinute) {
-        notificationsEnabled = enabled
-        notifyHour = hour
-        notifyMinute = minute
-        prefs.edit()
-            .putBoolean("notifications", enabled)
-            .putInt("notify_hour", hour)
-            .putInt("notify_minute", minute)
-            .apply()
-        Notifications.schedule(context, enabled, hour, minute)
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش

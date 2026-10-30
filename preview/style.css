@@ -196,6 +196,15 @@ body {
   background: var(--turquoise);
 }
 .hero__nav { margin-inline-start: auto; display: flex; gap: 2px; }
+.hero__badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 9px;
+  border: 1px solid rgba(240, 206, 126, .6);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--gold);
+}
 .hero__ritual {
   margin-top: 10px;
   font-size: 13.5px;
