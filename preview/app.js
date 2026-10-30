@@ -15,8 +15,8 @@
 
   const SHORT_WEEK = D.weekdayShort;
   const WEEK = D.weekdays;
-  const KIND_LABEL = { JASHN: 'جشن', AYIN: 'آیین', GAHAMBAR: 'گاهنبار', YADBUD: 'یادبود' };
-  const KIND_CLASS = { JASHN: 'jashn', AYIN: 'ayin', GAHAMBAR: 'gahambar', YADBUD: 'yadbud' };
+  const KIND_LABEL = { JASHN: 'جشن', AYIN: 'آیین', GAHAMBAR: 'گاهنبار', TAJGOZARI: 'تاج‌گذاری', YADBUD: 'یادبود' };
+  const KIND_CLASS = { JASHN: 'jashn', AYIN: 'ayin', GAHAMBAR: 'gahambar', TAJGOZARI: 'tajgozari', YADBUD: 'yadbud' };
 
   const store = {
     get(key, fallback) {
@@ -101,17 +101,17 @@
   function cellsOf(year, month) {
     const first = I.monthStart(year, month);
     const leading = C.weekdayIndex(first);
+    const panjeh = month === 12 ? I.panjehLength(year) : 0;
+    const regular = I.monthLength(year, month) - panjeh;
     const cells = [];
     for (let i = 0; i < leading; i++) cells.push(null);
-    for (let day = 1; day <= I.MONTH_DAYS; day++) cells.push(day);
-    if (month === 12) {
-      for (let p = 1; p <= I.panjehLength(year); p++) cells.push(-p);
-    }
+    for (let day = 1; day <= regular; day++) cells.push(day);
+    for (let p = 1; p <= panjeh; p++) cells.push(-p);
     return cells;
   }
 
   function cellEpoch(year, month, cell) {
-    return cell > 0 ? I.toEpochDay(year, month, cell) : I.toEpochDay(year, 12, 1, -cell);
+    return cell > 0 ? I.toEpochDay(year, month, cell) : I.panjehStart(year) + (-cell - 1);
   }
 
   /* ─── رندر ───────────────────────────────────────────────────────── */

@@ -214,19 +214,18 @@ fun IranianCalendarScreen(state: AppState, modifier: Modifier = Modifier) {
 // ───────────────────────────────────────────── شبکهٔ روزها
 
 /**
- * خانه‌های ماه: null برای جای خالی، و عددِ روز؛
- * روزهای پنجه با عددِ منفی نشان داده می‌شوند (۱− تا ۶−).
+ * خانه‌های ماه: null برای جای خالی، و عددِ روز.
+ * روزهای پنجهٔ وهیک (پایان سپندارمذ) با عددِ منفی نشان داده می‌شوند: ۱− تا ۶−.
  */
 private fun monthCells(year: Int, month: Int): List<Int?> {
     val first = IranianCalendar.toEpochDay(year, month, 1)
     val leading = IranianCalendar.weekdayIndex(first)
-    val cells = ArrayList<Int?>(leading + IranianCalendar.MONTH_DAYS + 6)
+    val panjeh = if (month == 12) IranianCalendar.panjehLength(year) else 0
+    val regularDays = IranianCalendar.monthLength(year, month) - panjeh
+    val cells = ArrayList<Int?>(leading + regularDays + panjeh + 7)
     repeat(leading) { cells.add(null) }
-    for (day in 1..IranianCalendar.MONTH_DAYS) cells.add(day)
-    if (month == 12) {
-        val panjeh = IranianCalendar.panjehLength(year)
-        for (index in 1..panjeh) cells.add(-index)
-    }
+    for (day in 1..regularDays) cells.add(day)
+    for (index in 1..panjeh) cells.add(-index)
     return cells
 }
 
@@ -304,7 +303,7 @@ private fun SelectedDateHeader(state: AppState, date: IranianDate, selected: Lon
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = if (date.isPanjeh) "پ" else state.digits(date.day),
+                text = state.digits(date.day),
                 style = MaterialTheme.typography.displayMedium,
                 color = palette.gold,
                 fontSize = 52.sp
@@ -339,6 +338,18 @@ private fun SelectedDateHeader(state: AppState, date: IranianDate, selected: Lon
             }
         }
         Spacer(Modifier.height(6.dp))
+        if (date.isPanjeh) {
+            Text(
+                text = "پنجهٔ وهیک",
+                style = MaterialTheme.typography.labelMedium,
+                color = palette.gold,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .border(1.dp, palette.gold.copy(alpha = 0.6f), CircleShape)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = date.ritualLabel,
@@ -385,15 +396,11 @@ private fun ArrowButton(
 @Composable
 private fun MonthRibbon(state: AppState, year: Int, activeMonth: Int) {
     val palette = LocalGahPalette.current
-    val listState = rememberLazyListState()
-    // ماهِ جاری همیشه در دید بماند — به‌ویژه در ماه‌های پایان سال
-    LaunchedEffect(activeMonth) {
-        val target = (activeMonth - 1).coerceIn(0, 11)
-        val visible = listState.layoutInfo.visibleItemsInfo
-        val inView = visible.any { it.index == target }
-        if (!inView) {
-            listState.animateScrollToItem(index = (target - 1).coerceAtLeast(0))
-        }
+    // ماهِ جاری از همان آغاز در ابتدای نوار می‌آید؛ با هر تغییر ماه هم دوباره
+    val startIndex = (activeMonth - 1).coerceIn(0, 11)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex)
+    LaunchedEffect(activeMonth, year) {
+        listState.scrollToItem(index = (activeMonth - 1).coerceIn(0, 11))
     }
     Column {
         Row(
@@ -665,6 +672,7 @@ private fun KindBadge(kind: FestivalKind) {
         FestivalKind.JASHN -> palette.saffron
         FestivalKind.AYIN -> palette.turquoise
         FestivalKind.GAHAMBAR -> palette.gold
+        FestivalKind.TAJGOZARI -> palette.gold
         FestivalKind.YADBUD -> palette.pomegranate
     }
     Text(
@@ -876,8 +884,8 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
 
         Spacer(Modifier.height(14.dp))
         SettingSwitch(
-            title = "گاه‌شمار در نوار وضعیت",
-            subtitle = "روز و ماه و جشن‌های امروز، بر صفحهٔ قفل هم دیده می‌شود",
+            title = "تاریخ در نوار وضعیت",
+            subtitle = "وقتی از برنامه بیرون می‌آیید، «۸ آبان / دی به آذر» در نوار وضعیت می‌ماند",
             checked = state.dayStatusEnabled,
             onCheckedChange = { enabled ->
                 if (enabled && Build.VERSION.SDK_INT >= 33) {

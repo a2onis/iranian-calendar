@@ -34,15 +34,18 @@ object PersianText {
 
     /** «۶ اردیبهشت ۱۴۰۴» */
     fun formatDate(date: IranianDate, persian: Boolean = true): String =
-        if (date.isPanjeh) {
-            "${date.dayName}، پنجهٔ ${digits(date.year, persian)}"
-        } else {
-            "${digits(date.day, persian)} ${monthName(date.month)} ${digits(date.year, persian)}"
-        }
+        "${digits(date.day, persian)} ${date.monthName} ${digits(date.year, persian)}"
 
     /** «۶ اردیبهشت ۱۴۰۴، آدینه» */
     fun formatDateWithWeekday(date: IranianDate, persian: Boolean = true): String =
         "${formatDate(date, persian)}، ${IranianCalendar.weekdayName(date.epochDay)}"
+
+    /**
+     * نشانِ کوتاه نوار وضعیت: «۸ آبان / دی به آذر»
+     * (روز و ماه، سپس نام کهنِ آن روز)
+     */
+    fun statusLabel(date: IranianDate, persian: Boolean = true): String =
+        "${digits(date.day, persian)} ${date.monthName} / ${date.dayName}"
 
     /** «بهرام روز از اردیبهشت ماه» */
     fun ritualLabel(date: IranianDate): String = date.ritualLabel

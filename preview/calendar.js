@@ -284,16 +284,24 @@ if (typeof module !== 'undefined' && module.exports) {
   const GATHA_NAMES = ['اهونود', 'اشتود', 'سپنتمد', 'وهوخشتر', 'وهیشتواشت'];
   const LEAP_GATHA = 'وهیشتواشت دوم';
 
-  const MONTH_DAYS = 30;
+  const MONTH_LENGTHS = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  const DAYS_BEFORE_PANJEH = 360;
+  const EXTRA_DAY_NAME = 'اَندَرگاه';
+  const EXTRA_DAY_MEANING = 'روزِ افزونِ ماه';
   const MONTHS = 12;
   const DAY_MS = 86400000;
   const TEHRAN_MS = 3.5 * 3600 * 1000;
 
   function yearStart(year) { return C.nowruzEpochDay(year); }
   function yearLength(year) { return C.yearLength(year); }
-  function panjehLength(year) { return yearLength(year) - MONTHS * MONTH_DAYS; }
-  function monthStart(year, month) { return yearStart(year) + (month - 1) * MONTH_DAYS; }
-  function panjehStart(year) { return yearStart(year) + MONTHS * MONTH_DAYS; }
+  function monthLength(year, month) {
+    if (month === 12) return 29 + (isLeap(year) ? 1 : 0);
+    return MONTH_LENGTHS[Math.min(Math.max(month - 1, 0), 11)];
+  }
+  function monthOffset(month) { return month <= 7 ? (month - 1) * 31 : 186 + (month - 7) * 30; }
+  function panjehLength(year) { return yearLength(year) - DAYS_BEFORE_PANJEH; }
+  function monthStart(year, month) { return yearStart(year) + monthOffset(month); }
+  function panjehStart(year) { return yearStart(year) + DAYS_BEFORE_PANJEH; }
   function isLeap(year) { return yearLength(year) === 366; }
 
   function yearOf(epochDay) {
@@ -306,20 +314,23 @@ if (typeof module !== 'undefined' && module.exports) {
   function fromEpochDay(epochDay) {
     const year = yearOf(epochDay);
     const index = epochDay - yearStart(year);
-    if (index < MONTHS * MONTH_DAYS) {
-      return { year: year, month: Math.floor(index / MONTH_DAYS) + 1, day: (index % MONTH_DAYS) + 1, panjehIndex: 0 };
+    if (index >= DAYS_BEFORE_PANJEH) {
+      return { year: year, month: 12, day: index - 336 + 1, panjehIndex: index - DAYS_BEFORE_PANJEH + 1 };
     }
-    return { year: year, month: 0, day: 0, panjehIndex: index - MONTHS * MONTH_DAYS + 1 };
+    if (index < 186) {
+      return { year: year, month: Math.floor(index / 31) + 1, day: (index % 31) + 1, panjehIndex: 0 };
+    }
+    return { year: year, month: Math.floor((index - 186) / 30) + 7, day: ((index - 186) % 30) + 1, panjehIndex: 0 };
   }
 
   function toEpochDay(year, month, day, panjehIndex) {
     if (panjehIndex) return panjehStart(year) + panjehIndex - 1;
-    return yearStart(year) + (month - 1) * MONTH_DAYS + day - 1;
+    return monthStart(year, month) + day - 1;
   }
 
   function monthName(month) { return MONTH_NAMES[Math.min(Math.max(month - 1, 0), 11)]; }
-  function dayName(day) { return DAY_NAMES[Math.min(Math.max(day - 1, 0), 29)]; }
-  function dayMeaning(day) { return DAY_MEANINGS[Math.min(Math.max(day - 1, 0), 29)]; }
+  function dayName(day) { return day >= 31 ? EXTRA_DAY_NAME : DAY_NAMES[Math.min(Math.max(day - 1, 0), 29)]; }
+  function dayMeaning(day) { return day >= 31 ? EXTRA_DAY_MEANING : DAY_MEANINGS[Math.min(Math.max(day - 1, 0), 29)]; }
   function gathaName(index) { return index >= 1 && index <= 5 ? GATHA_NAMES[index - 1] : LEAP_GATHA; }
 
   function nameOf(date) {
@@ -330,7 +341,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
   function ritualLabel(date) {
     return date.panjehIndex
-      ? 'روز ' + nameOf(date) + ' از پنجهٔ وهیک'
+      ? 'روز ' + nameOf(date) + ' از پنجهٔ وهیک (' + date.day + ' ' + monthName(date.month) + ')'
       : 'روز ' + nameOf(date) + ' از ' + monthName(date.month) + ' ماه';
   }
 
@@ -384,7 +395,7 @@ if (typeof module !== 'undefined' && module.exports) {
     festivals.forEach(f => {
       const rule = f.rule;
       if (rule.type === 'monthDay') {
-        if (!date.panjehIndex && date.month === rule.month && date.day === rule.day) out.push(f);
+        if (date.month === rule.month && date.day === rule.day) out.push(f);
       } else if (rule.type === 'panjeh') {
         if (date.panjehIndex === 1) out.push(f);
       } else if (rule.type === 'lastWednesday') {
@@ -397,8 +408,10 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   global.Iranian = {
-    MONTH_NAMES, DAY_NAMES, DAY_MEANINGS, GATHA_NAMES, MONTH_DAYS, MONTHS,
-    yearStart, yearLength, panjehLength, monthStart, panjehStart, isLeap, yearOf,
+    MONTH_NAMES, DAY_NAMES, DAY_MEANINGS, GATHA_NAMES, MONTH_LENGTHS, MONTHS,
+    DAYS_BEFORE_PANJEH, EXTRA_DAY_NAME, EXTRA_DAY_MEANING,
+    yearStart, yearLength, monthLength, monthOffset, panjehLength, monthStart,
+    panjehStart, isLeap, yearOf,
     fromEpochDay, toEpochDay, monthName, dayName, dayMeaning, gathaName,
     nameOf, meaningOf, ritualLabel, gahOfDay, lastWednesdayBeforeNowruz,
     winterSolsticeDay, dateInYear, festivalsOfYear, festivalsOn

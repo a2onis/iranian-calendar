@@ -93,7 +93,8 @@ class AppState(val context: Context) {
             IranianCalendar.panjehStart(year) +
                 (current.panjehIndex - 1).coerceAtMost(IranianCalendar.panjehLength(year) - 1)
         } else {
-            IranianCalendar.toEpochDay(year, current.month, current.day)
+            val day = current.day.coerceAtMost(IranianCalendar.monthLength(year, current.month))
+            IranianCalendar.toEpochDay(year, current.month, day)
         }
         browseYear = year
         selectedEpochDay = target
@@ -133,16 +134,31 @@ class AppState(val context: Context) {
         prefs.edit().putBoolean("today_only", value).apply()
     }
 
-    /** نوارگاه‌شمار در نوار وضعیت و صفحهٔ قفل */
+    /** تاریخ در نوار وضعیت: تنها وقتی برنامه بسته است دیده می‌شود */
     fun setDayStatus(enabled: Boolean) {
         dayStatusState = enabled
         prefs.edit().putBoolean("day_status", enabled).apply()
-        DayStatus.refresh(context, enabled)
+        runCatching {
+            if (enabled) {
+                DayStatus.scheduleMidnight(context)
+                DayStatus.hide(context)
+            } else {
+                DayStatus.refresh(context, false)
+            }
+        }
     }
 
-    /** هم‌گام‌سازی نوارگاه‌شمار با امروز (هنگام باز شدن برنامه) */
-    fun refreshDayStatus() {
-        if (dayStatusState) runCatching { DayStatus.show(context) }
+    /** نوارگاه‌شمار جز وقتی برنامه باز است، در نوار وضعیت می‌ماند */
+    fun hideDayStatusWhileOpen() {
+        runCatching { DayStatus.hide(context) }
+    }
+
+    fun showDayStatusWhenClosed() {
+        if (!dayStatusState) return
+        runCatching {
+            DayStatus.show(context)
+            DayStatus.scheduleMidnight(context)
+        }
     }
 
     fun setNotifications(enabled: Boolean, hour: Int = notifyHour, minute: Int = notifyMinute) {

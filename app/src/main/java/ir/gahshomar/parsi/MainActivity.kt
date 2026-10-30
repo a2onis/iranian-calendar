@@ -52,11 +52,8 @@ class MainActivity : ComponentActivity() {
                 GahshomarApp(state)
             }
         }
-        // نوارگاه‌شمار پس از نخستین نقش‌بندی ساخته می‌شود تا آغاز برنامه کند نشود
-        window.decorView.post {
-            runCatching { DayStatus.refresh(this, state.dayStatusEnabled) }
-            askNotificationPermission()
-        }
+        // اجازهٔ اطلاع‌رسانی پس از نخستین نقش‌بندی پرسیده می‌شود تا آغاز برنامه کند نشود
+        window.decorView.post { askNotificationPermission() }
     }
 
     private fun askNotificationPermission() {
@@ -68,12 +65,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // درون برنامه، تاریخ در خود صفحه هست؛ نشانِ نوار وضعیت برداشته می‌شود
+        if (::state.isInitialized) state.hideDayStatusWhileOpen()
+    }
+
     override fun onResume() {
         super.onResume()
         // بازخوانی «امروز» پس از بازگشت به برنامه (مثلاً پس از نیمه‌شب)
-        if (::state.isInitialized) {
-            state.refreshToday()
-            state.refreshDayStatus()
-        }
+        if (::state.isInitialized) state.refreshToday()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // با بیرون رفتن از برنامه، تاریخ در نوار وضعیت می‌ماند
+        if (::state.isInitialized && !isChangingConfigurations) state.showDayStatusWhenClosed()
     }
 }

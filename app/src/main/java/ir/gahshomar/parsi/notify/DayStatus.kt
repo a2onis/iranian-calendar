@@ -7,19 +7,19 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import ir.gahshomar.parsi.MainActivity
 import ir.gahshomar.parsi.R
 import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.PersianText
-import ir.gahshomar.parsi.data.Festivals
 import java.util.Calendar
 
 /**
- * گاه‌شمارِ همیشه‌در‌دسترس:
- * نواری ماندگار در نوار وضعیت و بر صفحهٔ قفل، با روز و ماه ایرانی و
- * جشن‌های همان روز. هر روز بامداد، خودبه‌خود تازه می‌شود.
+ * تاریخ در نوار وضعیت.
+ *
+ * تنها یک سطر کوتاه — «۸ آبان / دی به آذر» — چون فقط نوار وضعیت را می‌خواهیم:
+ * نه طرح سفارشی، نه متن بلند، نه برگهٔ گسترده. هر روز بامداد خودبه‌خود تازه می‌شود.
+ * این نشان تنها وقتی برنامه بسته است دیده می‌شود؛ درون برنامه، خودِ صفحه تاریخ را دارد.
  */
 object DayStatus {
 
@@ -32,10 +32,10 @@ object DayStatus {
             val manager = context.getSystemService(NotificationManager::class.java) ?: return
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "گاه‌شمار در نوار وضعیت",
+                "تاریخ در نوار وضعیت",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "روز و ماه ایرانی و جشن‌های امروز، همیشه در نوار وضعیت و بر صفحهٔ قفل."
+                description = "روز و ماه ایرانی، کوتاه و بی‌صدا، در نوار وضعیت."
                 setShowBadge(false)
                 enableVibration(false)
                 enableLights(false)
@@ -46,69 +46,28 @@ object DayStatus {
         }
     }
 
-    /** نشان دادن یا برداشتن نوارگاه‌شمار */
+    /** نشان دادن یا برداشتن نشانِ نوار وضعیت */
     fun refresh(context: Context, enabled: Boolean) {
         ensureChannel(context)
-        if (!enabled) {
-            cancel(context)
+        if (enabled) {
+            show(context)
+            scheduleMidnight(context)
+        } else {
+            hide(context)
             cancelMidnight(context)
-            return
         }
-        show(context)
-        scheduleMidnight(context)
     }
 
-    /** ساخت و نمایش نوار امروز */
+    /** یک سطر: «۸ آبان / دی به آذر» */
+    fun label(context: Context): String =
+        PersianText.statusLabel(
+            IranianCalendar.fromEpochDay(IranianCalendar.todayEpochDay()),
+            persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
+                .getBoolean("persian_digits", true)
+        )
+
     fun show(context: Context) {
         ensureChannel(context)
-        val today = IranianCalendar.todayEpochDay()
-        val date = IranianCalendar.fromEpochDay(today)
-        val weekday = IranianCalendar.weekdayName(today)
-        val digitsOf = { value: String -> PersianText.convertDigits(value) }
-        val festivals = Festivals.onEpochDay(today)
-
-        val dayLabel = if (date.isPanjeh) "پ" + digitsOf(date.panjehIndex.toString())
-        else digitsOf(date.day.toString())
-        val monthLabel = date.monthName
-        val yearLabel = digitsOf(date.year.toString())
-
-        val contentTitle = "$dayLabel $monthLabel — روز ${date.dayName}"
-        val contentText = if (festivals.isEmpty()) {
-            "روز ${date.dayName} از $monthLabel — ${date.dayMeaning}"
-        } else {
-            festivals.joinToString(" • ") { it.name }
-        }
-
-        val views = RemoteViews(context.packageName, R.layout.notification_day).apply {
-            setTextViewText(R.id.notif_day, dayLabel)
-            setTextViewText(R.id.notif_month, monthLabel)
-            setTextViewText(R.id.notif_year, yearLabel)
-            setTextViewText(R.id.notif_weekday, weekday)
-            setTextViewText(R.id.notif_ritual, date.ritualLabel)
-            setTextViewText(R.id.notif_meaning, date.dayMeaning)
-
-            val upcoming = Festivals.upcoming(today + 1, 1).firstOrNull()
-            val upcomingLine = upcoming?.let {
-                val days = (it.epochDay - today).toInt()
-                val whenLabel = if (days == 1) "فردا" else "${digitsOf(days.toString())} روز دیگر"
-                "پیشِ رو: ${it.festival.name} — $whenLabel"
-            }
-            val occasions = buildString {
-                if (festivals.isEmpty()) {
-                    append("امروز جشن ویژه‌ای در گاه‌شمار ایرانی نیست.")
-                } else {
-                    festivals.forEach { append("${it.name} — ${it.kind.label}\n") }
-                }
-                if (upcomingLine != null) append(upcomingLine)
-            }
-            setTextViewText(R.id.notif_events, occasions)
-            setTextViewText(
-                R.id.notif_footer,
-                if (festivals.isEmpty()) "گاه‌شمار ایرانی"
-                else "${digitsOf(festivals.size.toString())} جشن و آیین امروز • گاه‌شمار ایرانی"
-            )
-        }
-
         val openApp = PendingIntent.getActivity(
             context,
             0,
@@ -118,12 +77,7 @@ object DayStatus {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_calendar)
-            .setContentTitle(contentTitle)
-            .setContentText(contentText)
-            .setSubText("$weekday • $yearLabel")
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(views)
-            .setCustomBigContentView(views)
+            .setContentTitle(label(context))
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -135,17 +89,16 @@ object DayStatus {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager?.notify(NOTIFICATION_ID, notification)
+        context.getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
     }
 
-    fun cancel(context: Context) {
+    fun hide(context: Context) {
         context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
     }
 
     // ───────────────────────────── تازه‌سازی خودکار در بامداد
 
-    /** ساعت ۰۰:۰۵ هر روز، نوارگاه‌شمار تازه می‌شود */
+    /** ساعت ۰۰:۰۵ هر روز، تاریخ نوار وضعیت تازه می‌شود */
     fun scheduleMidnight(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val pending = midnightIntent(context)

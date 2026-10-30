@@ -56,9 +56,8 @@ class IranianCalendarTest {
     }
 
     @Test
-    fun everyMonthHasThirtyNamedDays() {
+    fun everyMonthHasNamedDaysAndAnExtraDay() {
         for (month in 1..12) {
-            assertEquals(30, IranianCalendar.MONTH_DAYS)
             assertTrue(IranianCalendar.monthName(month).isNotBlank())
         }
         assertEquals(30, IranianCalendar.DAY_NAMES.size)
@@ -66,23 +65,67 @@ class IranianCalendarTest {
         assertEquals("اورمزد", IranianCalendar.dayName(1))
         assertEquals("بهرام", IranianCalendar.dayName(20))
         assertEquals("انارام", IranianCalendar.dayName(30))
+        assertEquals("اَندَرگاه", IranianCalendar.dayName(31))
         assertEquals("سپندارمذ", IranianCalendar.monthName(12))
     }
 
     @Test
-    fun monthsAreThirtyDaysAndPanjehFollows() {
+    fun monthLengthsMatchTheOfficialCalendar() {
+        // شش ماه نخست ۳۱ روز، پنج ماه ۳۰ روز و سپندارمذ ۲۹ یا ۳۰ روز
+        for (month in 1..6) assertEquals("ماه $month", 31, IranianCalendar.monthLength(1404, month))
+        for (month in 7..11) assertEquals("ماه $month", 30, IranianCalendar.monthLength(1404, month))
+        assertEquals(29, IranianCalendar.monthLength(1404, 12))
+        assertEquals(30, IranianCalendar.monthLength(1403, 12))
+        assertEquals(31, IranianCalendar.monthLength(1405, 1))
+
         for (year in intArrayOf(1403, 1404)) {
+            var total = 0
             for (month in 1..12) {
-                val start = IranianCalendar.monthStart(year, month)
-                val next = if (month == 12) IranianCalendar.panjehStart(year)
-                else IranianCalendar.monthStart(year, month + 1)
-                assertEquals("ماه $month سال $year", 30L, next - start)
+                assertEquals(
+                    "سرِ ماه $month سال $year",
+                    IranianCalendar.yearStart(year) + total,
+                    IranianCalendar.monthStart(year, month)
+                )
+                total += IranianCalendar.monthLength(year, month)
             }
+            // پنجهٔ وهیک از ۲۵ سپندارمذ آغاز می‌شود
+            assertEquals(IranianCalendar.yearStart(year) + 360L, IranianCalendar.panjehStart(year))
+            assertEquals(IranianCalendar.yearStart(year) + 360L, IranianCalendar.monthStart(year, 12) + 24)
             assertEquals(
-                IranianCalendar.yearStart(year) + 360L,
-                IranianCalendar.panjehStart(year)
+                IranianCalendar.yearLength(year) - 360,
+                IranianCalendar.panjehLength(year)
             )
+            assertEquals(total, 360)
         }
+    }
+
+    @Test
+    fun todayIsTheEighthOfAbanInEmperialCalendar() {
+        // ۳۰ اکتبر ۲۰۲۶ = ۸ آبان ۱۴۰۵، روز «دی به آذر»
+        val today = IranianCalendar.fromEpochDay(CivilMath.gregorianToEpochDay(2026, 10, 30))
+        assertEquals(IranianDate(1405, 8, 8), today)
+        assertEquals("آبان", today.monthName)
+        assertEquals("دی به آذر", today.dayName)
+        assertEquals("۸ آبان / دی به آذر", PersianText.statusLabel(today))
+        assertFalse(today.isPanjeh)
+    }
+
+    @Test
+    fun panjehIsTheLastDaysOfEsfand() {
+        val start = IranianCalendar.panjehStart(1404)
+        val first = IranianCalendar.fromEpochDay(start)
+        assertEquals(12, first.month)
+        assertEquals(25, first.day)
+        assertEquals(1, first.panjehIndex)
+        assertTrue(first.isPanjeh)
+
+        val dayBefore = IranianCalendar.fromEpochDay(start - 1)
+        assertEquals(24, dayBefore.day)
+        assertFalse(dayBefore.isPanjeh)
+
+        val leapLast = IranianCalendar.fromEpochDay(IranianCalendar.panjehStart(1403) + 5)
+        assertEquals(30, leapLast.day)
+        assertEquals(6, leapLast.panjehIndex)
     }
 
     @Test
@@ -118,11 +161,19 @@ class IranianCalendarTest {
 
         val mehregan = IranianCalendar.fromEpochDay(IranianCalendar.toEpochDay(1404, 7, 16))
         assertEquals("مهر", mehregan.dayName)
-        assertEquals("2025-10-02", gregorian(mehregan.epochDay))
+        assertEquals("2025-10-08", gregorian(mehregan.epochDay))
 
         assertEquals(
-            "2025-09-26",
+            "2025-10-02",
             gregorian(IranianCalendar.toEpochDay(1404, 7, 10))
+        )
+        assertEquals(
+            "2025-10-30",
+            gregorian(IranianCalendar.toEpochDay(1404, 8, 8))
+        )
+        assertEquals(
+            "2025-04-20",
+            gregorian(IranianCalendar.toEpochDay(1404, 1, 31))
         )
     }
 
@@ -141,6 +192,16 @@ class IranianCalendarTest {
         }
         assertEquals(5, Festivals.ALL.count { it.kind == FestivalKind.GAHAMBAR })
         assertTrue(Festivals.ALL.any { it.rule == FestivalRule.Panjeh })
+        assertTrue("بیش از ۵۰ جشن و آیین", Festivals.ALL.size >= 50)
+        FestivalKind.values().forEach { kind ->
+            assertTrue("دستهٔ ${kind.label}", Festivals.ALL.any { it.kind == kind })
+        }
+        // تاج‌گذاری شاهان ایران
+        listOf("jamshid-taj", "faridun-taj", "reza-shah-taj", "mohammadreza-taj", "nader-shah-taj", "ahmad-shah-taj")
+            .forEach { assertNotNull("$it", Festivals.byId(it)) }
+        assertNotNull("کوروش", Festivals.byId("korosh"))
+        assertNotNull("سیرسور", Festivals.byId("sirsour"))
+        assertNotNull("خرم‌روز", Festivals.byId("khorram-rooz"))
     }
 
     @Test
@@ -161,13 +222,14 @@ class IranianCalendarTest {
     @Test
     fun mehreganAndTireganAreOnTheirNamedDays() {
         val mehregan = Festivals.onDate(IranianDate(1404, 7, 16))
-        assertEquals(listOf("mehregan"), mehregan.map { it.id })
 
         val tiregan = Festivals.onDate(IranianDate(1404, 4, 13))
         assertEquals(listOf("tiregan"), tiregan.map { it.id })
 
         val nowruz = Festivals.onDate(IranianDate(1404, 1, 1))
         assertTrue(nowruz.any { it.id == "nowruz" })
+        // مهرگان روز تاج‌گذاری فریدون در روایت ایرانی نیز هست
+        assertEquals(listOf("mehregan", "faridun-taj"), mehregan.map { it.id })
     }
 
     @Test
@@ -207,7 +269,7 @@ class IranianCalendarTest {
         assertTrue(date.isPanjeh)
         assertEquals(1, date.panjehIndex)
         assertEquals("اهونود", date.dayName)
-        assertEquals("روز اهونود از پنجهٔ وهیک", date.ritualLabel)
+        assertEquals("روز اهونود از پنجهٔ وهیک (۲۵ سپندارمذ)", date.ritualLabel)
         assertFalse(Festivals.onEpochDay(panjehStart + 1).any { it.id == "panjeh" })
     }
 
@@ -231,11 +293,9 @@ class IranianCalendarTest {
     fun monthListingFindsEachMonthFestivals() {
         val mehregan = Festivals.ofMonth(1404, 7)
         assertTrue(mehregan.any { it.festival.id == "mehregan" })
-        val farvardin = Festivals.ofMonth(1404, 1)
-        assertEquals(
-            listOf("nowruz", "khordadruz", "sizdah-bedar", "farvardigan"),
-            farvardin.map { it.festival.id }
-        )
+        val farvardin = Festivals.ofMonth(1404, 1).map { it.festival.id }
+        listOf("nowruz", "jamshid-taj", "khordadruz", "sizdah-bedar", "farvardigan", "attar")
+            .forEach { assertTrue("$it در فروردین", farvardin.contains(it)) }
     }
 
     @Test
