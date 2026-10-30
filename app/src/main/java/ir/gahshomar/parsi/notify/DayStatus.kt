@@ -6,20 +6,30 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import ir.gahshomar.parsi.MainActivity
 import ir.gahshomar.parsi.R
 import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.PersianText
+import ir.gahshomar.parsi.data.Festivals
 import java.util.Calendar
+import kotlin.math.ceil
 
 /**
- * تاریخ در نوار وضعیت.
+ * تاریخ در نوار وضعیت و بر صفحهٔ قفل.
  *
- * تنها یک سطر کوتاه — «۸ آبان / دی به آذر» — چون فقط نوار وضعیت را می‌خواهیم:
- * نه طرح سفارشی، نه متن بلند، نه برگهٔ گسترده. هر روز بامداد خودبه‌خود تازه می‌شود.
- * این نشان تنها وقتی برنامه بسته است دیده می‌شود؛ درون برنامه، خودِ صفحه تاریخ را دارد.
+ * اندروید هیچ راهی برای نوشتن متن در نوار وضعیت ندارد؛ تنها چیزی که در آن نوار کشیده
+ * می‌شود «نشانِ کوچکِ» یک اعلان است. پس تاریخ را با بوم (Canvas) بر یک تصویر می‌کشیم
+ * و همان را نشانِ کوچک اعلان می‌کنیم: «۸ آبان / دی به آذر» در نوار وضعیت خوانده می‌شود.
+ *
+ * بر صفحهٔ قفل و در برگهٔ اعلان‌ها هم همان تاریخ با نام روز و جشن‌های امروز می‌آید.
  */
 object DayStatus {
 
@@ -35,7 +45,7 @@ object DayStatus {
                 "تاریخ در نوار وضعیت",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "روز و ماه ایرانی، کوتاه و بی‌صدا، در نوار وضعیت."
+                description = "روز و ماه ایرانی در نوار وضعیت و بر صفحهٔ قفل."
                 setShowBadge(false)
                 enableVibration(false)
                 enableLights(false)
@@ -46,7 +56,7 @@ object DayStatus {
         }
     }
 
-    /** نشان دادن یا برداشتن نشانِ نوار وضعیت */
+    /** نشان دادن یا برداشتن تاریخ */
     fun refresh(context: Context, enabled: Boolean) {
         ensureChannel(context)
         if (enabled) {
@@ -58,16 +68,39 @@ object DayStatus {
         }
     }
 
-    /** یک سطر: «۸ آبان / دی به آذر» */
-    fun label(context: Context): String =
-        PersianText.statusLabel(
+    /** «۸ آبان / دی به آذر» — همان چیزی که در نوار وضعیت خوانده می‌شود */
+    fun label(context: Context): String {
+        val persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
+            .getBoolean("persian_digits", true)
+        return PersianText.statusLabel(
             IranianCalendar.fromEpochDay(IranianCalendar.todayEpochDay()),
-            persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-                .getBoolean("persian_digits", true)
+            persian = persian
         )
+    }
 
     fun show(context: Context) {
         ensureChannel(context)
+        val today = IranianCalendar.todayEpochDay()
+        val date = IranianCalendar.fromEpochDay(today)
+        val persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
+            .getBoolean("persian_digits", true)
+        val label = PersianText.statusLabel(date, persian)
+        val weekday = IranianCalendar.weekdayName(today)
+        val festivals = Festivals.onEpochDay(today)
+
+        val detail = buildString {
+            append(date.ritualLabel)
+            append(" • ")
+            append(weekday)
+            if (festivals.isNotEmpty()) {
+                append('\n')
+                festivals.forEach { append("• ${it.name} — ${it.kind.label}\n") }
+            } else {
+                append("\n")
+                append("امروز جشن ویژه‌ای در گاه‌شمار ایرانی نیست.")
+            }
+        }
+
         val openApp = PendingIntent.getActivity(
             context,
             0,
@@ -76,8 +109,14 @@ object DayStatus {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_calendar)
-            .setContentTitle(label(context))
+            .setSmallIcon(statusBarIcon(context, label))
+            .setContentTitle(label)
+            .setContentText("$weekday • ${date.ritualLabel}")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(detail)
+                    .setSummaryText("گاه‌شمار ایرانی")
+            )
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -87,6 +126,7 @@ object DayStatus {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setColor(Color.WHITE)
             .build()
 
         context.getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
@@ -96,9 +136,33 @@ object DayStatus {
         context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
     }
 
+    // ───────────────────────────── تاریخ، کشیده بر نشانِ نوار وضعیت
+
+    /**
+     * تصویری سپید بر زمینهٔ شفاف که متن تاریخ در آن نوشته شده است.
+     * نوار وضعیت همین تصویر را به‌جای نشانِ اعلان می‌کشد.
+     */
+    private fun statusBarIcon(context: Context, text: String): IconCompat {
+        val density = context.resources.displayMetrics.density
+        val height = (24f * density).toInt().coerceAtLeast(24)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+            textAlign = Paint.Align.LEFT
+            textSize = height * 0.74f
+        }
+        val metrics = paint.fontMetrics
+        val textWidth = paint.measureText(text)
+        val width = ceil(textWidth).toInt().coerceAtLeast(1)
+        val bitmapHeight = ceil(metrics.descent - metrics.ascent).toInt().coerceIn(1, height)
+        val bitmap = Bitmap.createBitmap(width + 2, bitmapHeight, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).drawText(text, 1f, -metrics.ascent, paint)
+        return IconCompat.createWithBitmap(bitmap)
+    }
+
     // ───────────────────────────── تازه‌سازی خودکار در بامداد
 
-    /** ساعت ۰۰:۰۵ هر روز، تاریخ نوار وضعیت تازه می‌شود */
+    /** ساعت ۰۰:۰۵ هر روز، تاریخ تازه می‌شود */
     fun scheduleMidnight(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val pending = midnightIntent(context)

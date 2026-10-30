@@ -840,7 +840,7 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted && state.dayStatusEnabled) state.showDayStatusWhenClosed() }
+    ) { granted -> if (granted && state.dayStatusEnabled) state.syncDayStatus() }
 
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 30.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -888,8 +888,8 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
 
         Spacer(Modifier.height(14.dp))
         SettingSwitch(
-            title = "تاریخ در نوار وضعیت",
-            subtitle = "وقتی از برنامه بیرون می‌آیید، «۸ آبان / دی به آذر» در نوار وضعیت می‌ماند",
+            title = "تاریخ در نوار وضعیت و صفحهٔ قفل",
+            subtitle = "«۸ آبان / دی به آذر» با متن در نوار وضعیت، و با نام روز و جشن‌های امروز بر صفحهٔ قفل",
             checked = state.dayStatusEnabled,
             onCheckedChange = { enabled ->
                 if (enabled && Build.VERSION.SDK_INT >= 33) {

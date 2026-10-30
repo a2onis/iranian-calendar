@@ -50,8 +50,11 @@ class MainActivity : ComponentActivity() {
                 GahshomarApp(state)
             }
         }
-        // اجازهٔ اطلاع‌رسانی پس از نخستین نقش‌بندی پرسیده می‌شود تا آغاز برنامه کند نشود
-        window.decorView.post { askNotificationPermission() }
+        // پس از نخستین نقش‌بندی: تاریخ در نوار وضعیت و پرسش اجازهٔ اطلاع‌رسانی
+        window.decorView.post {
+            askNotificationPermission()
+            state.syncDayStatus()
+        }
     }
 
     private fun askNotificationPermission() {
@@ -63,21 +66,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        // درون برنامه، تاریخ در خود صفحه هست؛ نشانِ نوار وضعیت برداشته می‌شود
-        if (::state.isInitialized) state.hideDayStatusWhileOpen()
-    }
-
     override fun onResume() {
         super.onResume()
-        // بازخوانی «امروز» پس از بازگشت به برنامه (مثلاً پس از نیمه‌شب)
-        if (::state.isInitialized) state.refreshToday()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        // با بیرون رفتن از برنامه، تاریخ در نوار وضعیت می‌ماند
-        if (::state.isInitialized && !isChangingConfigurations) state.showDayStatusWhenClosed()
+        // بازخوانی «امروز» و تازه‌کردن تاریخِ نوار وضعیت (مثلاً پس از نیمه‌شب)
+        if (::state.isInitialized) {
+            state.refreshToday()
+            state.syncDayStatus()
+        }
     }
 }

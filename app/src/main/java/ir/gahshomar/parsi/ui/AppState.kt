@@ -124,31 +124,17 @@ class AppState(val context: Context) {
         prefs.edit().putBoolean("today_only", value).apply()
     }
 
-    /** تاریخ در نوار وضعیت: تنها وقتی برنامه بسته است دیده می‌شود */
+    /** تاریخ در نوار وضعیت و بر صفحهٔ قفل */
     fun setDayStatus(enabled: Boolean) {
         dayStatusState = enabled
         prefs.edit().putBoolean("day_status", enabled).apply()
-        runCatching {
-            if (enabled) {
-                DayStatus.scheduleMidnight(context)
-                DayStatus.hide(context)
-            } else {
-                DayStatus.refresh(context, false)
-            }
-        }
+        runCatching { DayStatus.refresh(context, enabled) }
     }
 
-    /** نوارگاه‌شمار جز وقتی برنامه باز است، در نوار وضعیت می‌ماند */
-    fun hideDayStatusWhileOpen() {
-        runCatching { DayStatus.hide(context) }
-    }
-
-    fun showDayStatusWhenClosed() {
+    /** هم‌گام‌سازی تاریخ با امروز (هنگام گشودن یا بازگشت به برنامه) */
+    fun syncDayStatus() {
         if (!dayStatusState) return
-        runCatching {
-            DayStatus.show(context)
-            DayStatus.scheduleMidnight(context)
-        }
+        runCatching { DayStatus.refresh(context, true) }
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش
