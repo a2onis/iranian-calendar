@@ -204,7 +204,12 @@ object DayStatus {
         val height = ink.height() + pad * 2
         val bitmap = Bitmap.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        canvas.drawText(text, pad + shift - ink.left, pad - ink.top, paint)
+        canvas.drawText(
+            text,
+            (pad + shift - ink.left).toFloat(),
+            (pad - ink.top).toFloat(),
+            paint
+        )
         return IconCompat.createWithBitmap(bitmap)
     }
 
