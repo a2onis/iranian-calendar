@@ -310,7 +310,7 @@ class IranianCalendarTest {
     fun persianTextFormatsDatesAndDays() {
         val date = IranianCalendar.fromEpochDay(IranianCalendar.yearStart(1404))
         assertEquals("۱ فروردین ۲۵۸۴", PersianText.formatDate(date))
-        assertEquals("۱ فروردین ۱۴۰۴، آدینه", PersianText.formatDateWithWeekday(date))
+        assertEquals("۱ فروردین ۲۵۸۴، آدینه", PersianText.formatDateWithWeekday(date))
         assertEquals("روز اورمزد از فروردین ماه", PersianText.ritualLabel(date))
         assertEquals("امروز", PersianText.daysAway(0))
         assertEquals("۳ روز دیگر", PersianText.daysAway(3))
