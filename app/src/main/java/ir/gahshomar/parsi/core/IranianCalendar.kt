@@ -58,6 +58,15 @@ object IranianCalendar {
     /** نام روز ششمِ پنجه، تنها در سال کبیسه */
     const val LEAP_GATHA_NAME = "وهیشتواشت دوم"
 
+    /**
+     * مبدأ سال پهلوی: سال ایرانی + ۱۱۸۰.
+     * سال ۱۴۰۵ ایرانی = سال ۲۵۸۵ پهلوی.
+     */
+    const val PAHLAVI_OFFSET = 1180
+
+    /** سال پهلوی (۲۵۸۵) از سال ایرانی (۱۴۰۵) */
+    fun pahlaviYear(year: Int): Int = year + PAHLAVI_OFFSET
+
     /** نام برج‌های دوازده‌گانه که هر ماه با آن پیوند دارد (برای نقش‌مایه) */
     val MONTH_SIGNS = arrayOf(
         "بره", "گاو", "دوپیکر", "خرچنگ", "شیر", "خوشه‌دانه",
@@ -216,6 +225,6 @@ data class IranianDate(
             "روز $dayName از $monthName ماه"
         }
 
-    /** «۶ اردیبهشت ۱۴۰۴» — رقم‌ها لاتین‌اند و در نمایش فارسی می‌شوند */
-    fun shortLabel(): String = "$day $monthName $year"
+    /** «۶ اردیبهشت ۲۵۸۴» — سال پهلوی؛ رقم‌ها لاتین‌اند و در نمایش فارسی می‌شوند */
+    fun shortLabel(): String = "$day $monthName ${IranianCalendar.pahlaviYear(year)}"
 }

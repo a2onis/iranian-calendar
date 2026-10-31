@@ -311,7 +311,7 @@ private fun SelectedDateHeader(state: AppState, date: IranianDate, selected: Lon
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.padding(bottom = 6.dp)) {
                 Text(
-                    text = "${date.monthName} ${state.digits(date.year)}",
+                    text = "${date.monthName} ${state.digits(IranianCalendar.pahlaviYear(date.year))}",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -417,7 +417,7 @@ private fun MonthRibbon(state: AppState, year: Int, activeMonth: Int) {
                 )
             }
             Text(
-                text = "سال ${state.digits(year)}",
+                text = "سال ${state.digits(IranianCalendar.pahlaviYear(year))}",
                 style = MaterialTheme.typography.titleMedium,
                 color = palette.gold,
                 modifier = Modifier.weight(1f),
@@ -677,6 +677,7 @@ private fun KindBadge(kind: FestivalKind) {
         FestivalKind.AYIN -> palette.turquoise
         FestivalKind.GAHAMBAR -> palette.gold
         FestivalKind.TAJGOZARI -> palette.gold
+        FestivalKind.ASATIR -> palette.saffron
         FestivalKind.YADBUD -> palette.pomegranate
     }
     Text(
@@ -776,7 +777,8 @@ private fun UpcomingRows(
 @Composable
 private fun FooterNote(state: AppState) {
     Text(
-        text = "ماه‌های سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک؛ سال از اعتدال بهاری به وقت تهران آغاز می‌شود.",
+        text = "سی روزِ نام‌دار و پنجهٔ وهیک؛ سال از اعتدال بهاری به وقت تهران آغاز می‌شود و " +
+            "به سال پهلوی (۲۵۸۵) شمرده می‌شود.",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -825,7 +827,7 @@ private fun FestivalSheetContent(state: AppState, festival: Festival, onClose: (
         if (epochDay != null) {
             val date = IranianCalendar.fromEpochDay(epochDay)
             Text(
-                text = "در سال ${state.digits(state.selectedDate.year)}: " +
+                text = "در سال ${state.digits(IranianCalendar.pahlaviYear(state.selectedDate.year))}: " +
                     "${state.digits(date.shortLabel())}، ${state.weekdayName(epochDay)}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -898,6 +900,66 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 state.setDayStatus(enabled)
             }
         )
+        if (state.dayStatusEnabled) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "جای تاریخ در نوار وضعیت",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatusPosition.values().forEach { position ->
+                    ChoiceChip(
+                        text = position.label,
+                        active = state.statusPosition == position,
+                        onClick = { state.setStatusPosition(position) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "متن نوار وضعیت",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatusText.values().forEach { text ->
+                    ChoiceChip(
+                        text = text.label,
+                        active = state.statusText == text,
+                        onClick = { state.setStatusText(text) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "گاه‌شمار",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatusMode.values().forEach { mode ->
+                    ChoiceChip(
+                        text = mode.label,
+                        active = state.statusMode == mode,
+                        onClick = { state.setStatusMode(mode) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "در حالت «فقط بر صفحهٔ قفل»، برگهٔ اعلان‌ها پاک می‌ماند و تاریخ تنها " +
+                    "بر صفحهٔ قفل و نوار وضعیتِ زمان قفل دیده می‌شود.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(14.dp))
         SettingSwitch(
             title = "رقم‌های فارسی",
             subtitle = "نمایش ۱۲۳ به‌جای 123",
@@ -916,9 +978,11 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "گاه‌شمار ایرانی، گاه‌شماری کهن ایران‌زمین است: دوازده ماهِ سی‌روزه، " +
-                "سی روزِ نام‌دار و پنجهٔ وهیک. سال در لحظهٔ اعتدال بهاری به وقت تهران " +
-                "آغاز می‌شود. همهٔ داده‌ها در خود برنامه‌اند و برنامه بدون اینترنت کار می‌کند.",
+            text = "گاه‌شمار ایرانی، گاه‌شماری کهن ایران‌زمین است: دوازده ماه با نام‌های " +
+                "اوستایی، سی روزِ نام‌دار و پنجهٔ وهیک. سال در لحظهٔ اعتدال بهاری به وقت " +
+                "تهران آغاز می‌شود و به سال پهلوی (۱۴۰۵ ایرانی = ۲۵۸۵ پهلوی) شمرده " +
+                "می‌شود؛ سال هجری خورشیدی به کار نمی‌رود. همهٔ داده‌ها در خود برنامه‌اند و " +
+                "برنامه بدون اینترنت کار می‌کند.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -929,6 +993,26 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+@Composable
+private fun ChoiceChip(text: String, active: Boolean, onClick: () -> Unit) {
+    val palette = LocalGahPalette.current
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (active) palette.onGold else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (active) palette.gold else Color.Transparent)
+            .border(
+                1.dp,
+                if (active) palette.gold else MaterialTheme.colorScheme.outline,
+                CircleShape
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 11.dp, vertical = 6.dp)
+    )
 }
 
 @Composable

@@ -15,8 +15,8 @@
 
   const SHORT_WEEK = D.weekdayShort;
   const WEEK = D.weekdays;
-  const KIND_LABEL = { JASHN: 'جشن', AYIN: 'آیین', GAHAMBAR: 'گاهنبار', TAJGOZARI: 'تاج‌گذاری', YADBUD: 'یادبود' };
-  const KIND_CLASS = { JASHN: 'jashn', AYIN: 'ayin', GAHAMBAR: 'gahambar', TAJGOZARI: 'tajgozari', YADBUD: 'yadbud' };
+  const KIND_LABEL = { JASHN: 'جشن', AYIN: 'آیین', GAHAMBAR: 'گاهنبار', TAJGOZARI: 'تاج‌گذاری', ASATIR: 'اسطوره', YADBUD: 'یادبود' };
+  const KIND_CLASS = { JASHN: 'jashn', AYIN: 'ayin', GAHAMBAR: 'gahambar', TAJGOZARI: 'tajgozari', ASATIR: 'asatir', YADBUD: 'yadbud' };
 
   const store = {
     get(key, fallback) {
@@ -82,8 +82,7 @@
   }
 
   function longDate(d) {
-    if (d.panjehIndex) return `${I.nameOf(d)}، پنجهٔ ${fa(d.year)}`;
-    return `${fa(d.day)} ${I.monthName(d.month)} ${fa(d.year)}`;
+    return `${fa(d.day)} ${I.monthName(d.month)} ${fa(I.pahlaviYear(d.year))}`;
   }
 
   /* ─── داده‌های محاسبه‌شده ─────────────────────────────────────────── */
@@ -180,7 +179,7 @@
         <div class="hero__row">
           <div class="hero__day">${fa(d.day)}</div>
           <div>
-            <div class="hero__month">${I.monthName(d.month)} ${fa(d.year)}</div>
+            <div class="hero__month">${I.monthName(d.month)} ${fa(I.pahlaviYear(d.year))}</div>
             <div class="hero__meta">${weekdayName(state.selected)}
               ${state.selected === TODAY ? '<span class="hero__dot"></span>' : ''}
             </div>
@@ -197,7 +196,7 @@
 
       <div class="yearbar">
         <button class="iconbtn" data-action="prev-year" aria-label="سال پیش">${icons('right', 19)}</button>
-        <div class="yearbar__label">سال ${fa(year)}</div>
+        <div class="yearbar__label">سال ${fa(I.pahlaviYear(year))}</div>
         <button class="iconbtn" data-action="next-year" aria-label="سال پس">${icons('left', 19)}</button>
       </div>
 
@@ -283,7 +282,7 @@
     const epoch = I.dateInYear(festival, year);
     const when = epoch === null ? '' : `
       <div class="sheet__when">
-        در سال ${fa(year)}: ${escapeHtml(longDate(I.fromEpochDay(epoch)))}، ${weekdayName(epoch)}
+        در سال ${fa(I.pahlaviYear(year))}: ${escapeHtml(longDate(I.fromEpochDay(epoch)))}، ${weekdayName(epoch)}
         ${epoch === state.selected ? ' (همین روز)' : ''}
       </div>`;
     openSheet(festival.name, `

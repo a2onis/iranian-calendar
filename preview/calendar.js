@@ -328,6 +328,9 @@ if (typeof module !== 'undefined' && module.exports) {
     return monthStart(year, month) + day - 1;
   }
 
+  const PAHLAVI_OFFSET = 1180;
+  function pahlaviYear(year) { return year + PAHLAVI_OFFSET; }
+
   function monthName(month) { return MONTH_NAMES[Math.min(Math.max(month - 1, 0), 11)]; }
   function dayName(day) { return day >= 31 ? EXTRA_DAY_NAME : DAY_NAMES[Math.min(Math.max(day - 1, 0), 29)]; }
   function dayMeaning(day) { return day >= 31 ? EXTRA_DAY_MEANING : DAY_MEANINGS[Math.min(Math.max(day - 1, 0), 29)]; }
@@ -413,7 +416,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   global.Iranian = {
-    MONTH_NAMES, DAY_NAMES, DAY_MEANINGS, GATHA_NAMES, MONTH_LENGTHS, MONTHS,
+    MONTH_NAMES, DAY_NAMES, DAY_MEANINGS, GATHA_NAMES, MONTH_LENGTHS, MONTHS, PAHLAVI_OFFSET, pahlaviYear,
     DAYS_BEFORE_PANJEH, EXTRA_DAY_NAME, EXTRA_DAY_MEANING,
     yearStart, yearLength, monthLength, monthOffset, panjehLength, monthStart,
     panjehStart, isLeap, yearOf,

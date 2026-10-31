@@ -107,6 +107,10 @@ class IranianCalendarTest {
         assertEquals("آبان", today.monthName)
         assertEquals("دی به آذر", today.dayName)
         assertEquals("۸ آبان / دی به آذر", PersianText.statusLabel(today))
+        assertEquals("۸ آبان", PersianText.statusLabel(today, short = true))
+        // سال پهلوی: ۱۴۰۵ + ۱۱۸۰
+        assertEquals(2585, IranianCalendar.pahlaviYear(today.year))
+        assertEquals("۲۵۸۵", PersianText.pahlaviYear(today))
         assertFalse(today.isPanjeh)
     }
 
@@ -200,6 +204,9 @@ class IranianCalendarTest {
         listOf("jamshid-taj", "faridun-taj", "reza-shah-taj", "mohammadreza-taj", "nader-shah-taj", "ahmad-shah-taj")
             .forEach { assertNotNull("$it", Festivals.byId(it)) }
         assertNotNull("کوروش", Festivals.byId("korosh"))
+        assertNotNull("آرش", Festivals.byId("arash"))
+        assertNotNull("کیومرث", Festivals.byId("keyumars"))
+        assertNotNull("نیما", Festivals.byId("nima"))
         assertNotNull("سیرسور", Festivals.byId("sirsour"))
         assertNotNull("خرم‌روز", Festivals.byId("khorram-rooz"))
     }
@@ -223,8 +230,9 @@ class IranianCalendarTest {
     fun mehreganAndTireganAreOnTheirNamedDays() {
         val mehregan = Festivals.onDate(IranianDate(1404, 7, 16))
 
-        val tiregan = Festivals.onDate(IranianDate(1404, 4, 13))
-        assertEquals(listOf("tiregan"), tiregan.map { it.id })
+        val tiregan = Festivals.onDate(IranianDate(1404, 4, 13)).map { it.id }
+        assertTrue(tiregan.contains("tiregan"))
+        assertTrue("آرش کمانگیر", tiregan.contains("arash"))
 
         val nowruz = Festivals.onDate(IranianDate(1404, 1, 1))
         assertTrue(nowruz.any { it.id == "nowruz" })
@@ -301,7 +309,7 @@ class IranianCalendarTest {
     @Test
     fun persianTextFormatsDatesAndDays() {
         val date = IranianCalendar.fromEpochDay(IranianCalendar.yearStart(1404))
-        assertEquals("۱ فروردین ۱۴۰۴", PersianText.formatDate(date))
+        assertEquals("۱ فروردین ۲۵۸۴", PersianText.formatDate(date))
         assertEquals("۱ فروردین ۱۴۰۴، آدینه", PersianText.formatDateWithWeekday(date))
         assertEquals("روز اورمزد از فروردین ماه", PersianText.ritualLabel(date))
         assertEquals("امروز", PersianText.daysAway(0))

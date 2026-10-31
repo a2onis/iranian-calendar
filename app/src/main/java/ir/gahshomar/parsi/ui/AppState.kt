@@ -8,6 +8,26 @@ import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.notify.DayStatus
+import ir.gahshomar.parsi.notify.DayStatusService
+
+/** جای تاریخ در نوار وضعیت */
+enum class StatusPosition(val key: String, val label: String) {
+    LEFT("left", "چپ"),
+    CENTER("center", "میان"),
+    RIGHT("right", "راست")
+}
+
+/** کوتاه یا کامل بودن متنِ نوار وضعیت */
+enum class StatusText(val key: String, val label: String) {
+    SHORT("short", "کوتاه — ۸ آبان"),
+    FULL("full", "کامل — ۸ آبان / دی به آذر")
+}
+
+/** تاریخ همیشه دیده شود یا تنها بر صفحهٔ قفل */
+enum class StatusMode(val key: String, val label: String) {
+    ALWAYS("always", "همیشه در نوار وضعیت"),
+    LOCKED("locked", "فقط بر صفحهٔ قفل")
+}
 
 enum class ThemeMode(val label: String) {
     DARK("تیره"),
@@ -48,6 +68,27 @@ class AppState(val context: Context) {
 
     private var dayStatusState by mutableStateOf(prefs.getBoolean("day_status", true))
     val dayStatusEnabled: Boolean get() = dayStatusState
+
+    private var statusPositionState by mutableStateOf(
+        StatusPosition.values().firstOrNull {
+            it.key == prefs.getString("status_position", StatusPosition.RIGHT.key)
+        } ?: StatusPosition.RIGHT
+    )
+    val statusPosition: StatusPosition get() = statusPositionState
+
+    private var statusTextState by mutableStateOf(
+        StatusText.values().firstOrNull {
+            it.key == prefs.getString("status_text", StatusText.FULL.key)
+        } ?: StatusText.FULL
+    )
+    val statusText: StatusText get() = statusTextState
+
+    private var statusModeState by mutableStateOf(
+        StatusMode.values().firstOrNull {
+            it.key == prefs.getString("status_mode", StatusMode.ALWAYS.key)
+        } ?: StatusMode.ALWAYS
+    )
+    val statusMode: StatusMode get() = statusModeState
 
     // ───────────────────────────────────────── حرکت در تقویم
 
@@ -129,12 +170,40 @@ class AppState(val context: Context) {
         dayStatusState = enabled
         prefs.edit().putBoolean("day_status", enabled).apply()
         runCatching { DayStatus.refresh(context, enabled) }
+        DayStatusService.apply(context)
+    }
+
+    /** جای متن در نوار وضعیت */
+    fun setStatusPosition(position: StatusPosition) {
+        statusPositionState = position
+        prefs.edit().putString("status_position", position.key).apply()
+        runCatching { DayStatus.show(context) }
+    }
+
+    /** کوتاه یا کامل بودن متن نوار وضعیت */
+    fun setStatusText(text: StatusText) {
+        statusTextState = text
+        prefs.edit().putString("status_text", text.key).apply()
+        runCatching { DayStatus.show(context) }
+    }
+
+    /** همیشه، یا تنها بر صفحهٔ قفل */
+    fun setStatusMode(mode: StatusMode) {
+        statusModeState = mode
+        prefs.edit().putString("status_mode", mode.key).apply()
+        runCatching {
+            if (mode == StatusMode.ALWAYS) DayStatus.show(context) else DayStatus.hide(context)
+        }
+        DayStatusService.apply(context)
     }
 
     /** هم‌گام‌سازی تاریخ با امروز (هنگام گشودن یا بازگشت به برنامه) */
     fun syncDayStatus() {
         if (!dayStatusState) return
-        runCatching { DayStatus.refresh(context, true) }
+        runCatching {
+            if (statusModeState == StatusMode.ALWAYS) DayStatus.show(context)
+        }
+        DayStatusService.apply(context)
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش

@@ -349,6 +349,7 @@ body {
 .badge--ayin { color: var(--turquoise); }
 .badge--gahambar { color: var(--gold); }
 .badge--tajgozari { color: var(--saffron); }
+.badge--asatir { color: var(--turquoise); }
 .badge--yadbud { color: var(--pomegranate); }
 .festcard__away { margin-inline-start: auto; font-size: 10px; color: var(--ink-soft); }
 .festcard__name { font-size: 15.5px; font-weight: 600; color: var(--ink); }

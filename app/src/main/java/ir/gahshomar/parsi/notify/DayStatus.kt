@@ -10,9 +10,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.IconCompat
 import ir.gahshomar.parsi.MainActivity
 import ir.gahshomar.parsi.R
@@ -20,40 +22,51 @@ import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.data.Festivals
 import java.util.Calendar
-import kotlin.math.ceil
 
 /**
  * تاریخ در نوار وضعیت و بر صفحهٔ قفل.
  *
- * اندروید هیچ راهی برای نوشتن متن در نوار وضعیت ندارد؛ تنها چیزی که در آن نوار کشیده
- * می‌شود «نشانِ کوچکِ» یک اعلان است. پس تاریخ را با بوم (Canvas) بر یک تصویر می‌کشیم
- * و همان را نشانِ کوچک اعلان می‌کنیم: «۸ آبان / دی به آذر» در نوار وضعیت خوانده می‌شود.
- *
- * بر صفحهٔ قفل و در برگهٔ اعلان‌ها هم همان تاریخ با نام روز و جشن‌های امروز می‌آید.
+ * اندروید هیچ APIای برای نوشتن متن در نوار وضعیت ندارد؛ تنها چیزی که در آن نوار کشیده
+ * می‌شود «نشانِ کوچکِ» یک اعلان است. پس تاریخ را با بوم (Canvas) و با قلم وزیرمتن بر
+ * یک تصویر می‌کشیم و همان را نشان اعلان می‌کنیم. جای متن در آن نشان (چپ، میان، راست)
+ * و کوتاه یا کامل‌بودنش از تنظیمات می‌آید.
  */
 object DayStatus {
 
-    const val CHANNEL_ID = "gahshomar_day"
+    const val CHANNEL_ID = "gahshomar_day_v3"
     const val NOTIFICATION_ID = 1405
     private const val ALARM_REQUEST = 1405
 
+    /** جای متن در نشانِ نوار وضعیت */
+    const val POSITION_LEFT = "left"
+    const val POSITION_CENTER = "center"
+    const val POSITION_RIGHT = "right"
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
+
     fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = context.getSystemService(NotificationManager::class.java) ?: return
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "تاریخ در نوار وضعیت",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "روز و ماه ایرانی در نوار وضعیت و بر صفحهٔ قفل."
-                setShowBadge(false)
-                enableVibration(false)
-                enableLights(false)
-                setSound(null, null)
-                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        // کانال پیشین (نسخه‌های ۲٫۱ و ۲٫۲) برداشته می‌شود تا نشانی تکراری نماند
+        runCatching {
+            listOf("gahshomar_day", "gahshomar_day_v2", "gahshomar_reminder").forEach { old ->
+                if (old != CHANNEL_ID) manager.deleteNotificationChannel(old)
             }
-            manager.createNotificationChannel(channel)
         }
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "تاریخ در نوار وضعیت",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "روز و ماه ایرانی، در نوار وضعیت و بر صفحهٔ قفل."
+            setShowBadge(false)
+            enableVibration(false)
+            enableLights(false)
+            setSound(null, null)
+            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+        }
+        manager.createNotificationChannel(channel)
     }
 
     /** نشان دادن یا برداشتن تاریخ */
@@ -68,36 +81,39 @@ object DayStatus {
         }
     }
 
-    /** «۸ آبان / دی به آذر» — همان چیزی که در نوار وضعیت خوانده می‌شود */
+    /** «۸ آبان / دی به آذر» یا «۸ آبان» — همان چیزی که در نوار وضعیت خوانده می‌شود */
     fun label(context: Context): String {
-        val persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-            .getBoolean("persian_digits", true)
+        val prefs = prefs(context)
         return PersianText.statusLabel(
             IranianCalendar.fromEpochDay(IranianCalendar.todayEpochDay()),
-            persian = persian
+            persian = prefs.getBoolean("persian_digits", true),
+            short = prefs.getString("status_text", "full") == "short"
         )
     }
 
     fun show(context: Context) {
         ensureChannel(context)
+        val prefs = prefs(context)
         val today = IranianCalendar.todayEpochDay()
         val date = IranianCalendar.fromEpochDay(today)
-        val persian = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-            .getBoolean("persian_digits", true)
-        val label = PersianText.statusLabel(date, persian)
+        val persian = prefs.getBoolean("persian_digits", true)
+        val label = PersianText.statusLabel(date, persian, short = false)
+        val shortLabel = PersianText.statusLabel(date, persian, short = true)
+        val barLabel = if (prefs.getString("status_text", "full") == "short") shortLabel else label
+        val position = prefs.getString("status_position", POSITION_RIGHT) ?: POSITION_RIGHT
         val weekday = IranianCalendar.weekdayName(today)
         val festivals = Festivals.onEpochDay(today)
+        val year = PersianText.pahlaviYear(date, persian)
 
+        // سطرهای صفحهٔ قفل: ماه و سال پهلوی، روزِ نام‌دار، سپس جشن‌های امروز
+        val headline = "$shortLabel • $weekday"
         val detail = buildString {
-            append(date.ritualLabel)
-            append(" • ")
-            append(weekday)
-            if (festivals.isNotEmpty()) {
-                append('\n')
-                festivals.forEach { append("• ${it.name} — ${it.kind.label}\n") }
-            } else {
-                append("\n")
+            append("سال $year پهلوی — ${date.ritualLabel}")
+            append('\n')
+            if (festivals.isEmpty()) {
                 append("امروز جشن ویژه‌ای در گاه‌شمار ایرانی نیست.")
+            } else {
+                appFestivals(festivals, this)
             }
         }
 
@@ -109,27 +125,43 @@ object DayStatus {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(statusBarIcon(context, label))
+            .setSmallIcon(statusBarIcon(context, barLabel, position))
             .setContentTitle(label)
-            .setContentText("$weekday • ${date.ritualLabel}")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(detail)
-                    .setSummaryText("گاه‌شمار ایرانی")
-            )
+            .setContentText(headline)
+            .setSubText("سال $year")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail).setSummaryText(headline))
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
+            .setWhen(0)
             .setSilent(true)
             .setLocalOnly(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setColor(Color.WHITE)
+            .build()
+
+        // نسخهٔ آشکار برای صفحهٔ قفل (همان تاریخ، بی هیچ پنهان‌کاری)
+        notification.publicVersion = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(statusBarIcon(context, barLabel, position))
+            .setContentTitle(label)
+            .setContentText(headline)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
+            .setShowWhen(false)
+            .setSilent(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
             .build()
 
         context.getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun appFestivals(festivals: List<ir.gahshomar.parsi.data.Festival>, out: StringBuilder) {
+        festivals.forEachIndexed { index, festival ->
+            if (index > 0) out.append('\n')
+            out.append("• ${festival.name} — ${festival.kind.label}")
+        }
     }
 
     fun hide(context: Context) {
@@ -140,23 +172,39 @@ object DayStatus {
 
     /**
      * تصویری سپید بر زمینهٔ شفاف که متن تاریخ در آن نوشته شده است.
-     * نوار وضعیت همین تصویر را به‌جای نشانِ اعلان می‌کشد.
+     * متن تا می‌تواند بزرگ کشیده می‌شود (به بلندیِ نوار وضعیت) و جای آن
+     * با [position] جابه‌جا می‌شود: چپ، میان یا راست.
      */
-    private fun statusBarIcon(context: Context, text: String): IconCompat {
+    fun statusBarIcon(context: Context, text: String, position: String): IconCompat {
         val density = context.resources.displayMetrics.density
-        val height = (24f * density).toInt().coerceAtLeast(24)
+        val barHeight = (24f * density).toInt().coerceAtLeast(24)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+            typeface = runCatching {
+                ResourcesCompat.getFont(context, R.font.vazirmatn_medium)
+            }.getOrNull() ?: Typeface.create("sans-serif-medium", Typeface.NORMAL)
             textAlign = Paint.Align.LEFT
-            textSize = height * 0.74f
+            // به بلندیِ نوار وضعیت، هم‌اندازهٔ ساعتِ نوار وضعیت
+            textSize = barHeight * 0.96f
         }
-        val metrics = paint.fontMetrics
-        val textWidth = paint.measureText(text)
-        val width = ceil(textWidth).toInt().coerceAtLeast(1)
-        val bitmapHeight = ceil(metrics.descent - metrics.ascent).toInt().coerceIn(1, height)
-        val bitmap = Bitmap.createBitmap(width + 2, bitmapHeight, Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).drawText(text, 1f, -metrics.ascent, paint)
+        // متن بلند در نشان جای کمتری می‌گیرد؛ اندازه را کمی پایین می‌آوریم
+        if (text.length > 12) paint.textSize = barHeight * 0.78f
+        val ink = Rect()
+        paint.getTextBounds(text, 0, text.length, ink)
+        if (ink.width() <= 0 || ink.height() <= 0) {
+            paint.getTextBounds("۰", 0, 1, ink)
+        }
+        val pad = (density * 1.2f).toInt().coerceAtLeast(1)
+        val shift = when (position) {
+            POSITION_LEFT -> (ink.width() * 0.55f).toInt()
+            POSITION_CENTER -> (ink.width() * 0.27f).toInt()
+            else -> 0
+        }
+        val width = ink.width() + pad * 2 + shift * 2
+        val height = ink.height() + pad * 2
+        val bitmap = Bitmap.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawText(text, pad + shift - ink.left, pad - ink.top, paint)
         return IconCompat.createWithBitmap(bitmap)
     }
 

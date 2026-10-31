@@ -47,8 +47,8 @@ val Vazir = FontFamily(
     Font(R.font.vazirmatn_bold, FontWeight.Bold)
 )
 
-/** قلم نمایشی برای عنوان‌ها (لاله‌زار) */
-val DisplayFont = FontFamily(Font(R.font.lalezar_regular, FontWeight.Normal))
+/** قلم نمایشی برای عنوان‌ها — همان وزیرمتن، تنها سنگین‌تر */
+val DisplayFont = Vazir
 
 private val GahTypography = Typography(
     displayLarge = TextStyle(fontFamily = DisplayFont, fontSize = 46.sp, lineHeight = 58.sp),

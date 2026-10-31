@@ -32,20 +32,32 @@ object PersianText {
 
     fun dayName(dayOfMonth: Int): String = IranianCalendar.dayName(dayOfMonth)
 
-    /** «۶ اردیبهشت ۱۴۰۴» */
+    /** «۶ اردیبهشت ۲۵۸۴» — سال پهلوی، نه هجری خورشیدی */
     fun formatDate(date: IranianDate, persian: Boolean = true): String =
-        "${digits(date.day, persian)} ${date.monthName} ${digits(date.year, persian)}"
+        "${digits(date.day, persian)} ${date.monthName} " +
+            digits(IranianCalendar.pahlaviYear(date.year), persian)
 
     /** «۶ اردیبهشت ۱۴۰۴، آدینه» */
     fun formatDateWithWeekday(date: IranianDate, persian: Boolean = true): String =
         "${formatDate(date, persian)}، ${IranianCalendar.weekdayName(date.epochDay)}"
 
     /**
-     * نشانِ کوتاه نوار وضعیت: «۸ آبان / دی به آذر»
+     * نشانِ نوار وضعیت: «۸ آبان / دی به آذر»
      * (روز و ماه، سپس نام کهنِ آن روز)
+     *
+     * وقتی [short] روشن باشد تنها «۸ آبان» می‌آید تا متن در نوار وضعیت
+     * بزرگ‌تر و خواناتر دیده شود.
      */
-    fun statusLabel(date: IranianDate, persian: Boolean = true): String =
-        "${digits(date.day, persian)} ${date.monthName} / ${date.dayName}"
+    fun statusLabel(date: IranianDate, persian: Boolean = true, short: Boolean = false): String =
+        if (short) {
+            "${digits(date.day, persian)} ${date.monthName}"
+        } else {
+            "${digits(date.day, persian)} ${date.monthName} / ${date.dayName}"
+        }
+
+    /** «۲۵۸۵» */
+    fun pahlaviYear(date: IranianDate, persian: Boolean = true): String =
+        digits(IranianCalendar.pahlaviYear(date.year), persian)
 
     /** «بهرام روز از اردیبهشت ماه» */
     fun ritualLabel(date: IranianDate): String = date.ritualLabel

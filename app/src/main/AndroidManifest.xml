@@ -31,6 +31,11 @@
             android:name=".notify.DayStatusReceiver"
             android:exported="false" />
 
+        <service
+            android:name=".notify.DayStatusService"
+            android:exported="false"
+            android:stopWithTask="false" />
+
         <receiver
             android:name=".notify.BootReceiver"
             android:exported="false">

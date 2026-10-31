@@ -11,6 +11,7 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
         if (prefs.getBoolean("day_status", true)) {
             runCatching { DayStatus.refresh(context, true) }
+            DayStatusService.apply(context)
         }
     }
 }
