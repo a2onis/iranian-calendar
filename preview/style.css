@@ -27,6 +27,24 @@
   --shadow: 0 24px 70px rgba(0, 0, 0, .55);
 }
 
+/* ── چهار فصل: رنگ‌مایهٔ «فصلی» (تیره) ───────────────────────────────── */
+[data-theme="dark"][data-season="spring"] {
+  --gold: #9BE5A8; --gold-deep: #5FBF77; --turquoise: #FFB3C6;
+  --app: #0A1710; --surface: #11251A; --surface-2: #17301F; --line: #27462F;
+}
+[data-theme="dark"][data-season="summer"] {
+  --gold: #FFD97A; --gold-deep: #E0A83C; --turquoise: #5FD6CE;
+  --app: #06141A; --surface: #0C2231; --surface-2: #123043; --line: #214A5F;
+}
+[data-theme="dark"][data-season="autumn"] {
+  --gold: #F2A95C; --gold-deep: #C9761B; --turquoise: #E47B93;
+  --app: #150E08; --surface: #231810; --surface-2: #2E2015; --line: #4A3726;
+}
+[data-theme="dark"][data-season="winter"] {
+  --gold: #9ECBE8; --gold-deep: #3F7FA8; --turquoise: #C9CEE0;
+  --app: #080F1A; --surface: #0F1B2A; --surface-2: #16273A; --line: #263D55;
+}
+
 [data-theme="light"] {
   --gold: #8A6415;
   --gold-deep: #6E4F0C;
@@ -43,6 +61,24 @@
   --ink-soft: #6A5C48;
   --on-gold: #FFF8E8;
   --shadow: 0 22px 60px rgba(60, 45, 20, .28);
+}
+
+/* ── چهار فصل: رنگ‌مایهٔ «فصلی» (روشن) ───────────────────────────────── */
+[data-theme="light"][data-season="spring"] {
+  --gold: #1D6B3F; --gold-deep: #14452A; --turquoise: #A3284C;
+  --bg: #DCE8CE; --app: #F3F7EA; --surface: #FCFEF7; --surface-2: #E4EDD6; --line: #B9CBA4;
+}
+[data-theme="light"][data-season="summer"] {
+  --gold: #0B6A6A; --gold-deep: #07504F; --turquoise: #8A5E08;
+  --bg: #CFE3DE; --app: #F1F7F5; --surface: #FBFEFC; --surface-2: #DCEDE8; --line: #A9CCC5;
+}
+[data-theme="light"][data-season="autumn"] {
+  --gold: #8A4A0A; --gold-deep: #7A420A; --turquoise: #7A1D38;
+  --bg: #E8D5BA; --app: #F8F0E4; --surface: #FFFBF3; --surface-2: #EFE0CB; --line: #C9B18F;
+}
+[data-theme="light"][data-season="winter"] {
+  --gold: #1B4463; --gold-deep: #143350; --turquoise: #4A4C63;
+  --bg: #D6E3EE; --app: #EFF4F9; --surface: #FBFDFF; --surface-2: #DDE8F2; --line: #AEC4D6;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }

@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
  */
 @Composable
 fun GahshomarApp(state: AppState) {
-    GahshomarTheme(darkTheme = state.themeIsDark(isSystemInDarkTheme())) {
+    GahshomarTheme(
+        season = state.season,
+        darkTheme = state.themeIsDark(isSystemInDarkTheme())
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

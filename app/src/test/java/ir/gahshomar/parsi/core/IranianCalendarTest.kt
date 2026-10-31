@@ -106,7 +106,9 @@ class IranianCalendarTest {
         assertEquals(IranianDate(1405, 8, 8), today)
         assertEquals("آبان", today.monthName)
         assertEquals("دی به آذر", today.dayName)
-        assertEquals("۸ آبان / دی به آذر", PersianText.statusLabel(today))
+        // «نام روز، شمارهٔ روز، نام ماه»
+        assertEquals("دی به آذر ۸ آبان", PersianText.statusLabel(today))
+        assertEquals("دی به آذر ۸ آبان", PersianText.dayMonthLabel(today))
         assertEquals("۸ آبان", PersianText.statusLabel(today, short = true))
         // سال پهلوی: ۱۴۰۵ + ۱۱۸۰
         assertEquals(2585, IranianCalendar.pahlaviYear(today.year))
@@ -317,6 +319,22 @@ class IranianCalendarTest {
         assertEquals("۲ روز پیش", PersianText.daysAway(-2))
         assertEquals("۱۴۰۴", PersianText.digits(1404))
         assertEquals("بهرام — پیروزی", PersianText.dayWithMeaning(20))
+    }
+
+    @Test
+    fun seasonsFollowTheIranianMonths() {
+        val spring = (1..3).map { ir.gahshomar.parsi.ui.theme.Season.ofMonth(it) }.distinct()
+        val summer = (4..6).map { ir.gahshomar.parsi.ui.theme.Season.ofMonth(it) }.distinct()
+        val autumn = (7..9).map { ir.gahshomar.parsi.ui.theme.Season.ofMonth(it) }.distinct()
+        val winter = (10..12).map { ir.gahshomar.parsi.ui.theme.Season.ofMonth(it) }.distinct()
+        assertEquals(listOf(ir.gahshomar.parsi.ui.theme.Season.SPRING), spring)
+        assertEquals(listOf(ir.gahshomar.parsi.ui.theme.Season.SUMMER), summer)
+        assertEquals(listOf(ir.gahshomar.parsi.ui.theme.Season.AUTUMN), autumn)
+        assertEquals(listOf(ir.gahshomar.parsi.ui.theme.Season.WINTER), winter)
+        // آبان، پاییز است و پوستهٔ فصلی‌اش تیره
+        assertTrue(ir.gahshomar.parsi.ui.theme.Season.ofMonth(8).prefersDark)
+        // اردیبهشت روشن است
+        assertTrue(!ir.gahshomar.parsi.ui.theme.Season.ofMonth(2).prefersDark)
     }
 
     @Test

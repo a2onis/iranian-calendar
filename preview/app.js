@@ -117,6 +117,11 @@
   const app = document.getElementById('app');
 
   function render(keepScroll) {
+    // رنگ‌مایهٔ فصلی: با ماهِ ایرانی می‌گردد
+    const seasonOf = (month) => month <= 3 ? 'spring' : month <= 6 ? 'summer' : month <= 9 ? 'autumn' : 'winter';
+    const anchorDate = I.fromEpochDay(state.selected);
+    const seasonKey = seasonOf(anchorDate.month);
+    document.documentElement.dataset.season = seasonKey;
     const scrollTop = app.scrollTop;
     const d = date();
     const year = d.year;

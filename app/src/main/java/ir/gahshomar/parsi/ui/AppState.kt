@@ -9,6 +9,7 @@ import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.notify.DayStatus
 import ir.gahshomar.parsi.notify.DayStatusService
+import ir.gahshomar.parsi.ui.theme.Season
 
 /** جای تاریخ در نوار وضعیت */
 enum class StatusPosition(val key: String, val label: String) {
@@ -19,8 +20,8 @@ enum class StatusPosition(val key: String, val label: String) {
 
 /** کوتاه یا کامل بودن متنِ نوار وضعیت */
 enum class StatusText(val key: String, val label: String) {
-    SHORT("short", "کوتاه — ۸ آبان"),
-    FULL("full", "کامل — ۸ آبان / دی به آذر")
+    FULL("full", "کامل — دی به آذر ۹ آبان"),
+    SHORT("short", "کوتاه — ۹ آبان")
 }
 
 /** تاریخ همیشه دیده شود یا تنها بر صفحهٔ قفل */
@@ -30,6 +31,7 @@ enum class StatusMode(val key: String, val label: String) {
 }
 
 enum class ThemeMode(val label: String) {
+    SEASONAL("فصلی"),
     DARK("تیره"),
     LIGHT("روشن"),
     SYSTEM("هماهنگ با سامانه")
@@ -56,7 +58,8 @@ class AppState(val context: Context) {
     // ───────────────────────────────────────── تنظیمات
 
     private var themeModeState by mutableStateOf(
-        runCatching { ThemeMode.valueOf(prefs.getString("theme", "DARK")!!) }.getOrDefault(ThemeMode.DARK)
+        runCatching { ThemeMode.valueOf(prefs.getString("theme", "SEASONAL")!!) }
+            .getOrDefault(ThemeMode.SEASONAL)
     )
     val themeMode: ThemeMode get() = themeModeState
 
@@ -142,7 +145,11 @@ class AppState(val context: Context) {
         }
     }
 
+    /** فصلِ کنونی (از ماهِ امروز) — رنگ‌مایهٔ برنامه با آن می‌گردد */
+    val season: Season get() = Season.of(todayEpochDay)
+
     fun themeIsDark(systemDark: Boolean): Boolean = when (themeMode) {
+        ThemeMode.SEASONAL -> season.prefersDark
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
         ThemeMode.SYSTEM -> systemDark

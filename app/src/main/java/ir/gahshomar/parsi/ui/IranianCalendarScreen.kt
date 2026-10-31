@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,10 +57,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.gahshomar.parsi.R
 import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
@@ -846,6 +849,14 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
 
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 30.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.ic_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(11.dp))
+            )
+            Spacer(Modifier.width(10.dp))
             Text(
                 text = "تنظیمات",
                 style = MaterialTheme.typography.headlineSmall,
@@ -869,24 +880,20 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             ThemeMode.values().forEach { mode ->
-                val active = state.themeMode == mode
-                Text(
-                    text = mode.label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (active) palette.onGold else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(if (active) palette.gold else Color.Transparent)
-                        .border(
-                            1.dp,
-                            if (active) palette.gold else MaterialTheme.colorScheme.outline,
-                            CircleShape
-                        )
-                        .clickable { state.setThemeMode(mode) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ChoiceChip(
+                    text = if (mode == ThemeMode.SEASONAL) "فصلی (${state.season.label})" else mode.label,
+                    active = state.themeMode == mode,
+                    onClick = { state.setThemeMode(mode) }
                 )
             }
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "پوستهٔ «فصلی» با ماهِ ایرانی می‌گردد: بهار سبزِ روشن، تابستان فیروزه‌ای، " +
+                "پاییز نارنجیِ تیره و زمستان آبیِ یخی.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
         Spacer(Modifier.height(14.dp))
         SettingSwitch(

@@ -33,7 +33,7 @@ import java.util.Calendar
  */
 object DayStatus {
 
-    const val CHANNEL_ID = "gahshomar_day_v3"
+    const val CHANNEL_ID = "gahshomar_day_v4"
     const val NOTIFICATION_ID = 1405
     private const val ALARM_REQUEST = 1405
 
@@ -50,15 +50,22 @@ object DayStatus {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         // کانال پیشین (نسخه‌های ۲٫۱ و ۲٫۲) برداشته می‌شود تا نشانی تکراری نماند
         runCatching {
-            listOf("gahshomar_day", "gahshomar_day_v2", "gahshomar_reminder").forEach { old ->
+            listOf(
+                "gahshomar_day", "gahshomar_day_v2", "gahshomar_day_v3", "gahshomar_reminder"
+            ).forEach { old ->
                 if (old != CHANNEL_ID) manager.deleteNotificationChannel(old)
             }
         }
+        // اهمیتِ DEFAULT (نه LOW) تا اگر کاربر «اعلان‌های بی‌صدا را روی صفحهٔ قفل پنهان کن»
+        // را روشن کرده باشد، تاریخ از صفحهٔ قفل ناپدید نشود. صدا و لرزش ندارد.
         val channel = NotificationChannel(
             CHANNEL_ID,
             "تاریخ در نوار وضعیت",
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
+            setSound(null, null)
+            vibrationPattern = null
+            setShowBadge(false)
             description = "روز و ماه ایرانی، در نوار وضعیت و بر صفحهٔ قفل."
             setShowBadge(false)
             enableVibration(false)
@@ -97,16 +104,20 @@ object DayStatus {
         val today = IranianCalendar.todayEpochDay()
         val date = IranianCalendar.fromEpochDay(today)
         val persian = prefs.getBoolean("persian_digits", true)
-        val label = PersianText.statusLabel(date, persian, short = false)
-        val shortLabel = PersianText.statusLabel(date, persian, short = true)
-        val barLabel = if (prefs.getString("status_text", "full") == "short") shortLabel else label
+        // «دی به آذر ۹ آبان» — نام روز، شمارهٔ روز، نام ماه
+        val label = PersianText.dayMonthLabel(date, persian)
+        val barLabel = PersianText.statusLabel(
+            date,
+            persian,
+            short = prefs.getString("status_text", "full") == "short"
+        )
         val position = prefs.getString("status_position", POSITION_RIGHT) ?: POSITION_RIGHT
         val weekday = IranianCalendar.weekdayName(today)
         val festivals = Festivals.onEpochDay(today)
         val year = PersianText.pahlaviYear(date, persian)
 
         // سطرهای صفحهٔ قفل: ماه و سال پهلوی، روزِ نام‌دار، سپس جشن‌های امروز
-        val headline = "$shortLabel • $weekday"
+        val headline = "$label • $weekday"
         val detail = buildString {
             append("سال $year پهلوی — ${date.ritualLabel}")
             append('\n')
@@ -135,11 +146,13 @@ object DayStatus {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setWhen(0)
-            .setSilent(true)
+            .setDefaults(0)
+            .setSound(null)
+            .setVibrate(null)
             .setLocalOnly(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
         // نسخهٔ آشکار برای صفحهٔ قفل (همان تاریخ، بی هیچ پنهان‌کاری)
@@ -149,7 +162,9 @@ object DayStatus {
             .setContentText(headline)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setShowWhen(false)
-            .setSilent(true)
+            .setDefaults(0)
+            .setSound(null)
+            .setVibrate(null)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .build()
@@ -176,40 +191,70 @@ object DayStatus {
      * با [position] جابه‌جا می‌شود: چپ، میان یا راست.
      */
     fun statusBarIcon(context: Context, text: String, position: String): IconCompat {
-        val density = context.resources.displayMetrics.density
+        val metrics = context.resources.displayMetrics
+        val density = metrics.density
         val barHeight = (24f * density).toInt().coerceAtLeast(24)
+        val screenWidth = metrics.widthPixels.coerceAtLeast(barHeight * 6)
+
+        val typeface = runCatching {
+            ResourcesCompat.getFont(context, R.font.vazirmatn_medium)
+        }.getOrNull() ?: Typeface.create("sans-serif-medium", Typeface.NORMAL)
+
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            typeface = runCatching {
-                ResourcesCompat.getFont(context, R.font.vazirmatn_medium)
-            }.getOrNull() ?: Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            this.typeface = typeface
             textAlign = Paint.Align.LEFT
-            // به بلندیِ نوار وضعیت، هم‌اندازهٔ ساعتِ نوار وضعیت
-            textSize = barHeight * 0.96f
+            // دو برابرِ پیشین: هم‌اندازهٔ ساعت یا بزرگ‌تر
+            textSize = barHeight * 1.9f
         }
-        // متن بلند در نشان جای کمتری می‌گیرد؛ اندازه را کمی پایین می‌آوریم
-        if (text.length > 12) paint.textSize = barHeight * 0.78f
-        val ink = Rect()
-        paint.getTextBounds(text, 0, text.length, ink)
-        if (ink.width() <= 0 || ink.height() <= 0) {
-            paint.getTextBounds("۰", 0, 1, ink)
+
+        fun measure(): Rect {
+            val rect = Rect()
+            paint.getTextBounds(text, 0, text.length, rect)
+            return rect
         }
-        val pad = (density * 1.2f).toInt().coerceAtLeast(1)
-        val shift = when (position) {
-            POSITION_LEFT -> (ink.width() * 0.55f).toInt()
-            POSITION_CENTER -> (ink.width() * 0.27f).toInt()
-            else -> 0
+
+        // اگر بلندیِ متن از دو برابرِ نوار بیشتر شد، کمی کوچک می‌شود
+        var ink = measure()
+        val heightLimit = barHeight * 2.1f
+        if (ink.height() > heightLimit) {
+            paint.textSize *= heightLimit / ink.height()
+            ink = measure()
         }
-        val width = ink.width() + pad * 2 + shift * 2
-        val height = ink.height() + pad * 2
-        val bitmap = Bitmap.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        // اگر از سه برابرِ عرض صفحه پهن‌تر شد، تا آن اندازه کوچک می‌شود
+        val widthLimit = screenWidth * 3f
+        if (ink.width() > widthLimit) {
+            paint.textSize *= widthLimit / ink.width()
+            ink = measure()
+        }
+
+        val pad = (density * 2f).toInt().coerceAtLeast(1)
+        val textWidth = ink.width()
+        // عرضِ تصویر: متن + حاشیه. برای «میان» و «چپ» سطحِ گسترده‌تری می‌سازیم
+        // تا متن واقعاً در میانه یا آغازِ نوار بنشیند، نه اینکه فقط حاشیه بیفزاید.
+        val width = when (position) {
+            POSITION_LEFT -> textWidth + pad * 2
+            POSITION_CENTER -> textWidth * 3 + pad * 2
+            else -> textWidth + pad * 2
+        }
+        val height = (ink.height() + pad * 2).coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(width.coerceAtLeast(1), height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        canvas.drawText(
-            text,
-            (pad + shift - ink.left).toFloat(),
-            (pad - ink.top).toFloat(),
-            paint
-        )
+        val baseline = (pad - ink.top).toFloat()
+        when (position) {
+            POSITION_LEFT -> canvas.drawText(text, pad.toFloat(), baseline, paint)
+            POSITION_CENTER -> {
+                // نوار وضعیت تصویر را در جایگاه خود می‌چسباند؛ متن در میانهٔ آن می‌نشیند
+                val x = (bitmap.width - textWidth) / 2f
+                canvas.drawText(text, x, baseline, paint)
+            }
+            else -> canvas.drawText(
+                text,
+                (bitmap.width - textWidth - pad).toFloat(),
+                baseline,
+                paint
+            )
+        }
         return IconCompat.createWithBitmap(bitmap)
     }
 

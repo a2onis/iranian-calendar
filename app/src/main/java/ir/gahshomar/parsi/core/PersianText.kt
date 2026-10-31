@@ -42,18 +42,17 @@ object PersianText {
         "${formatDate(date, persian)}، ${IranianCalendar.weekdayName(date.epochDay)}"
 
     /**
-     * نشانِ نوار وضعیت: «۸ آبان / دی به آذر»
-     * (روز و ماه، سپس نام کهنِ آن روز)
-     *
-     * وقتی [short] روشن باشد تنها «۸ آبان» می‌آید تا متن در نوار وضعیت
-     * بزرگ‌تر و خواناتر دیده شود.
+     * نشانِ روز به ترتیبِ خواسته‌شده: «نام روز، شمارهٔ روز، نام ماه»
+     * نمونه: «دی به آذر ۹ آبان».
+     */
+    fun dayMonthLabel(date: IranianDate, persian: Boolean = true): String =
+        "${date.dayName} ${digits(date.day, persian)} ${date.monthName}"
+
+    /**
+     * نشانِ نوار وضعیت؛ با [short] تنها «۹ آبان» می‌آید.
      */
     fun statusLabel(date: IranianDate, persian: Boolean = true, short: Boolean = false): String =
-        if (short) {
-            "${digits(date.day, persian)} ${date.monthName}"
-        } else {
-            "${digits(date.day, persian)} ${date.monthName} / ${date.dayName}"
-        }
+        if (short) "${digits(date.day, persian)} ${date.monthName}" else dayMonthLabel(date, persian)
 
     /** «۲۵۸۵» */
     fun pahlaviYear(date: IranianDate, persian: Boolean = true): String =
