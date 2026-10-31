@@ -1,0 +1,511 @@
+/* ==========================================================================
+   گاه‌شمار ایرانی — شیوه‌نامهٔ پیش‌نمایش
+   شبِ لاجوردی، زرِ آتشگاه، فیروزهٔ کاریز، گلِ انار. کنتراست بالا، بی آنکه چشم آزرده شود.
+   ========================================================================== */
+
+@font-face { font-family: 'Vazirmatn'; src: url('fonts/Vazirmatn-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Vazirmatn'; src: url('fonts/Vazirmatn-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Vazirmatn'; src: url('fonts/Vazirmatn-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Vazirmatn'; src: url('fonts/Vazirmatn-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Lalezar'; src: url('fonts/Lalezar-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+:root {
+  --gold: #F0CE7E;
+  --gold-deep: #C89834;
+  --turquoise: #57D6C7;
+  --pomegranate: #FF8AA0;
+  --saffron: #F2A659;
+
+  --bg: #080D18;
+  --app: #0B1226;
+  --surface: #121B33;
+  --surface-2: #17223E;
+  --line: #2A3554;
+  --ink: #F4ECDD;
+  --ink-soft: #B9B2A3;
+  --on-gold: #171004;
+  --shadow: 0 24px 70px rgba(0, 0, 0, .55);
+}
+
+[data-theme="light"] {
+  --gold: #8A6415;
+  --gold-deep: #6E4F0C;
+  --turquoise: #0B5F58;
+  --pomegranate: #A8213A;
+  --saffron: #A85D12;
+
+  --bg: #E8DCC4;
+  --app: #F6EEDC;
+  --surface: #FFFBF2;
+  --surface-2: #F0E5CF;
+  --line: #D5C4A3;
+  --ink: #2A231B;
+  --ink-soft: #6A5C48;
+  --on-gold: #FFF8E8;
+  --shadow: 0 22px 60px rgba(60, 45, 20, .28);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 78% 6%, rgba(240, 206, 126, .10), transparent 42%),
+    radial-gradient(circle at 12% 92%, rgba(87, 214, 199, .09), transparent 46%);
+  background-attachment: fixed;
+  transition: background-color .3s ease, color .3s ease;
+}
+
+/* ── قالب دستگاه ────────────────────────────────────────────────────── */
+.stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 24px 16px;
+}
+
+.stage__side { display: none; }
+
+.device {
+  width: 100%;
+  max-width: 430px;
+  height: min(880px, calc(100vh - 36px));
+  background: var(--app);
+  border-radius: 34px;
+  overflow: hidden;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(240, 206, 126, .12);
+  position: relative;
+}
+
+@media (min-width: 1080px) {
+  .stage__side {
+    display: block;
+    width: 300px;
+    padding-bottom: 20px;
+  }
+  .stage__side::before {
+    content: 'گاه‌شمار ایرانی';
+    display: block;
+    font-family: 'Lalezar', 'Vazirmatn', sans-serif;
+    font-size: 46px;
+    line-height: 1.35;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+  .stage__side::after {
+    content: 'دوازده ماهِ سی‌روزه، سی روزِ نام‌دار، پنجهٔ وهیک و جشن‌های کهن ایران — در یک صفحه، بدون تب، بدون اینترنت.';
+    display: block;
+    font-size: 14.5px;
+    line-height: 2.15;
+    color: var(--ink-soft);
+  }
+}
+
+.app {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 18px;
+  scroll-behavior: smooth;
+}
+.app::-webkit-scrollbar { width: 5px; }
+.app::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* ── نوار بالایی ────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 18px 10px;
+  background: linear-gradient(var(--app) 68%, transparent);
+  backdrop-filter: blur(6px);
+}
+.topbar__title {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .1px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.topbar__title small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--gold);
+}
+.topbar__today {
+  border: 1px solid rgba(240, 206, 126, .55);
+  background: transparent;
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+.topbar__today:hover { background: rgba(240, 206, 126, .12); }
+.iconbtn {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, transform .15s ease;
+}
+.iconbtn:hover { background: var(--surface-2); color: var(--ink); }
+.iconbtn:active { transform: scale(.93); }
+
+/* ── تاریخ برگزیده ─────────────────────────────────────────────────── */
+.hero { padding: 6px 20px 14px; }
+.hero__row { display: flex; align-items: flex-end; gap: 10px; }
+.hero__day {
+  font-family: 'Lalezar', 'Vazirmatn', sans-serif;
+  font-size: 62px;
+  line-height: .92;
+  color: var(--gold);
+}
+.hero__month {
+  font-family: 'Lalezar', 'Vazirmatn', sans-serif;
+  font-size: 27px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.hero__meta {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  display: flex; align-items: center; gap: 6px;
+}
+.hero__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--turquoise);
+}
+.hero__nav { margin-inline-start: auto; display: flex; gap: 2px; }
+.hero__badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 9px;
+  border: 1px solid rgba(240, 206, 126, .6);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--gold);
+}
+.hero__ritual {
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--turquoise);
+}
+.hero__meaning { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+/* ── سال و ماه‌ها ──────────────────────────────────────────────────── */
+.yearbar {
+  display: flex; align-items: center;
+  padding: 2px 10px;
+  gap: 4px;
+}
+.yearbar__label {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.months {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 16px 8px;
+  scrollbar-width: none;
+}
+.months::-webkit-scrollbar { display: none; }
+.monthpill {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+  transition: all .16s ease;
+}
+.monthpill:hover { border-color: var(--gold); color: var(--ink); }
+.monthpill--active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+  font-weight: 600;
+}
+
+/* ── شبکهٔ روزها ──────────────────────────────────────────────────── */
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 2px 12px 4px;
+  font-size: 10.5px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+.weekdays span:last-child { color: var(--pomegranate); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 0 12px;
+}
+.cell {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 9px 0 8px;
+  cursor: pointer;
+  transition: transform .14s ease, background .16s ease, border-color .16s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.cell:hover { transform: translateY(-1px); border-color: var(--gold); }
+.cell--empty { border: 0; background: transparent; cursor: default; }
+.cell--empty:hover { transform: none; }
+.cell__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+.cell--friday { color: var(--pomegranate); }
+.cell--today {
+  border-color: var(--turquoise);
+  background: rgba(87, 214, 199, .10);
+}
+.cell--selected {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+}
+.cell--selected .cell__dot { background: var(--on-gold); }
+.cell--panjeh { color: var(--gold); border-color: rgba(240, 206, 126, .5); }
+.cell--panjeh.cell--selected { color: var(--on-gold); }
+
+.hint {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 10px 30px 2px;
+}
+
+/* ── کارت‌های جشن ─────────────────────────────────────────────────── */
+.section {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 18px 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.section svg { color: var(--gold); flex: 0 0 auto; }
+
+.festivals { padding: 0 14px; }
+.festcard {
+  background: var(--surface);
+  border: 1px solid rgba(240, 206, 126, .30);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color .16s ease, transform .14s ease;
+}
+.festcard:hover { border-color: var(--gold); transform: translateY(-1px); }
+.festcard__top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.badge {
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 2px 9px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.badge--jashn { color: var(--saffron); }
+.badge--ayin { color: var(--turquoise); }
+.badge--gahambar { color: var(--gold); }
+.badge--tajgozari { color: var(--saffron); }
+.badge--asatir { color: var(--turquoise); }
+.badge--yadbud { color: var(--pomegranate); }
+.festcard__away { margin-inline-start: auto; font-size: 10px; color: var(--ink-soft); }
+.festcard__name { font-size: 15.5px; font-weight: 600; color: var(--ink); }
+.festcard__sum { font-size: 12px; line-height: 1.95; color: var(--ink-soft); margin-top: 3px; }
+
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 12.5px;
+  line-height: 2;
+  color: var(--ink);
+}
+.empty span { display: block; color: var(--ink-soft); font-size: 11.5px; margin-top: 3px; }
+
+.upcoming {
+  margin: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 4px 12px;
+}
+.uprow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; cursor: pointer;
+  border-bottom: 1px solid var(--line);
+}
+.uprow:last-child { border-bottom: 0; }
+.uprow__box {
+  width: 38px; height: 38px; flex: 0 0 auto;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+  color: var(--gold);
+}
+.uprow__name { font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.uprow__meta { font-size: 10.5px; color: var(--ink-soft); }
+.uprow__away { margin-inline-start: auto; font-size: 10.5px; color: var(--turquoise); }
+
+.footer {
+  font-size: 10.5px;
+  line-height: 2;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 18px 30px 26px;
+}
+
+/* ── برگه ─────────────────────────────────────────────────────────── */
+.sheet-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+.sheet-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4, 8, 16, .62);
+  opacity: 0; transition: opacity .24s ease;
+  pointer-events: none;
+}
+.sheet {
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: min(430px, 100%);
+  max-height: 86vh;
+  display: flex; flex-direction: column;
+  background: var(--app);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, .45);
+  transform: translate(-50%, 104%);
+  transition: transform .3s cubic-bezier(.22, .8, .28, 1);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.sheet-layer.open { pointer-events: auto; }
+.sheet-layer.open .sheet-backdrop { opacity: 1; pointer-events: auto; }
+.sheet-layer.open .sheet { transform: translate(-50%, 0); }
+.sheet__handle { width: 42px; height: 4px; border-radius: 2px; background: var(--line); margin: 9px auto 4px; }
+.sheet__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet__title { flex: 1 1 auto; font-size: 15px; font-weight: 600; }
+.sheet__body { overflow-y: auto; padding: 14px 20px 26px; }
+
+.sheet__name {
+  font-family: 'Lalezar', 'Vazirmatn', sans-serif;
+  font-size: 28px;
+  color: var(--ink);
+  margin: 8px 0 2px;
+}
+.sheet__sum { font-size: 13px; color: var(--turquoise); margin-bottom: 12px; }
+.sheet__text { font-size: 13.5px; line-height: 2.35; color: var(--ink); }
+.sheet__when {
+  margin-top: 16px;
+  font-size: 11.5px;
+  line-height: 1.9;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.sheet__label { font-size: 11.5px; color: var(--ink-soft); margin: 14px 0 6px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.chip--active { background: var(--gold); border-color: var(--gold); color: var(--on-gold); font-weight: 600; }
+
+.switchrow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+}
+.switchrow__text { flex: 1 1 auto; font-size: 13px; color: var(--ink); }
+.switchrow__text small { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+.switch {
+  position: relative;
+  width: 44px; height: 25px; flex: 0 0 auto;
+  border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--line);
+  transition: background .2s ease;
+}
+.switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 19px; height: 19px; border-radius: 50%;
+  background: #fff;
+  transition: transform .2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+}
+.switch[aria-checked="true"] { background: var(--turquoise); }
+.switch[aria-checked="true"]::after { transform: translateX(19px); }
+
+.about { font-size: 12px; line-height: 2.15; color: var(--ink); margin-top: 8px; }
+.about small { display: block; margin-top: 10px; color: var(--ink-soft); font-size: 10.5px; }
+
+.toast {
+  position: fixed; bottom: 40px; left: 50%;
+  transform: translate(-50%, 12px);
+  background: var(--surface);
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  opacity: 0; pointer-events: none;
+  transition: all .25s ease;
+  z-index: 90;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 520px) {
+  .stage { padding: 0; }
+  .device { max-width: 100%; height: 100vh; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .sheet { border-radius: 22px 22px 0 0; }
+}

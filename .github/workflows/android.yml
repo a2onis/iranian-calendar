@@ -1,0 +1,121 @@
+name: ساخت APK گاه‌شمار ایرانی
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ساخت و آزمون
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v5
+
+      - name: نصب JDK ۱۷
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: آماده‌سازی Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: ساخت و آزمون
+        run: |
+          set -o pipefail
+          {
+            gradle :app:assembleRelease --no-daemon --stacktrace
+            gradle :app:testDebugUnitTest --no-daemon --stacktrace
+          } 2>&1 | tee build-log.txt
+
+      - name: بارگذاری گزارش ساخت
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-log.txt
+          if-no-files-found: ignore
+
+      - name: بارگذاری گزارش آزمون
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: گزارش-آزمون
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - name: گزارش نتیجه در گفت‌وگوی Pull Request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "### نتیجهٔ ساخت: موفق ✅"
+              echo ""
+              echo "APK ساخته شد و آزمون‌های گاه‌شماری گذشتند."
+            else
+              echo "### نتیجهٔ ساخت: ناموفق ❌"
+              echo '```'
+              grep -E "^e: |error:|Unresolved reference|FAILURE|Execution failed|Caused by|FAILED|AssertionError|expected:|Test >" build-log.txt | head -80
+              echo ""
+              echo "--- آزمون‌های ناموفق ---"
+              find app/build/test-results -name "*.xml" -exec grep -l "<failure" {} \; 2>/dev/null | head -3 | while read -r f; do
+                grep -oE 'testcase name="[^"]+"|<failure message="[^"]{0,400}' "$f" | head -20
+              done
+              echo '```'
+            fi
+          } > comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+
+      - name: نام‌گذاری APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/gahshomar-irani.apk"
+
+      - name: بارگذاری APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gahshomar-irani-apk
+          path: dist/gahshomar-irani.apk
+          if-no-files-found: error
+
+      - name: انتشار برای برچسب‌ها
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: گاه‌شمار ایرانی ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: dist/gahshomar-irani.apk
+          body: |
+            **گاه‌شمار ایرانی** — گاه‌شماری کهن ایران: دوازده ماهِ سی‌روزه، سی روزِ نام‌دار و جشن‌های کهن.
+
+            فایل پیوستِ این انتشار، نسخهٔ نصب‌شدنی اندروید است:
+
+            * `gahshomar-irani.apk` — نسخهٔ بهینه‌شده (R8، بدون کد اشکال‌زدایی)، اندروید ۷ (API 24) و بالاتر
+            * برای نصب: فایل را روی گوشی بارگیری کنید و «نصب از منابع نامشخص» را برای مرورگر یا مدیر فایل روشن کنید
+            * برنامه هیچ مجوز اینترنتی ندارد و کاملاً آفلاین کار می‌کند
+
+            ### چه چیزی در برنامه هست
+            * گاه‌شماری ایرانی کهن: دوازده ماهِ سی‌روزه، سی روزِ نام‌دار و پنجهٔ وهیک
+            * سال از اعتدال بهاری به وقت تهران (محاسبهٔ نجومی رسمی ایران)
+            * ۲۶ جشن و آیین: جشن‌های روز و ماه هم‌نام، گاهنبارها، سده، یلدا، چهارشنبه‌سوری
+            * یک صفحهٔ تمام‌صفحه بدون تب: برگزیدن روز و دیدن جشن‌های همان روز
+            * پوستهٔ تیره (پیش‌فرض)، روشن و هماهنگ با سامانه؛ تمام‌فارسی و بدون اینترنت
+            * روز و ماه و جشن‌های امروز، همیشه در نوار وضعیت و بر صفحهٔ قفل

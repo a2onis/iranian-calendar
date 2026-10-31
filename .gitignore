@@ -1,0 +1,20 @@
+# اندروید / Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# ابزارها و سیستم
+.DS_Store
+__pycache__/
+*.pyc
+node_modules/
