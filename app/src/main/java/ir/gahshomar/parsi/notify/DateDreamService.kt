@@ -1,6 +1,5 @@
 package ir.gahshomar.parsi.notify
 
-import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Handler
@@ -112,7 +111,7 @@ class DateDreamService : DreamService() {
     }
 
     private fun render() {
-        val prefs = getSharedPreferences(LockDateOverlay.PREFS, Context.MODE_PRIVATE)
+        val prefs = OverlayStyle.prefs(this)
         val persian = prefs.getBoolean("persian_digits", true)
         val today = IranianCalendar.todayEpochDay()
         val date = IranianCalendar.fromEpochDay(today)
