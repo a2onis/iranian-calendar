@@ -7,17 +7,8 @@ import androidx.compose.runtime.setValue
 import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
-import ir.gahshomar.parsi.notify.DayStatus
-import ir.gahshomar.parsi.notify.DayStatusService
 import ir.gahshomar.parsi.notify.LockDateOverlay
 import ir.gahshomar.parsi.ui.theme.Season
-
-/** جای تاریخ در نوار وضعیت */
-enum class StatusPosition(val key: String, val label: String) {
-    LEFT("left", "چپ"),
-    CENTER("center", "میان"),
-    RIGHT("right", "راست")
-}
 
 /** جای پنجرهٔ تاریخ روی صفحه */
 enum class OverlaySpot(val key: String, val label: String) {
@@ -32,22 +23,11 @@ enum class OverlaySpot(val key: String, val label: String) {
 
 /** اندازهٔ متن تاریخ روی صفحه */
 enum class OverlaySize(val sp: Int, val label: String) {
-    SMALL(16, "کوچک"),
-    MEDIUM(22, "متوسط"),
-    LARGE(30, "بزرگ"),
-    HUGE(38, "بزرگ‌تر")
-}
-
-/** کوتاه یا کامل بودن متنِ نوار وضعیت */
-enum class StatusText(val key: String, val label: String) {
-    FULL("full", "کامل — دی به آذر ۹ آبان"),
-    SHORT("short", "کوتاه — ۹ آبان")
-}
-
-/** تاریخ همیشه دیده شود یا تنها بر صفحهٔ قفل */
-enum class StatusMode(val key: String, val label: String) {
-    ALWAYS("always", "همیشه در نوار وضعیت"),
-    LOCKED("locked", "فقط بر صفحهٔ قفل")
+    SMALL(20, "۲۰"),
+    MEDIUM(28, "۲۸"),
+    LARGE(36, "۳۶"),
+    HUGE(48, "۴۸"),
+    GIANT(64, "۶۴")
 }
 
 enum class ThemeMode(val label: String) {
@@ -91,9 +71,6 @@ class AppState(val context: Context) {
     private var todayOnlyState by mutableStateOf(prefs.getBoolean("today_only", true))
     val todayOnly: Boolean get() = todayOnlyState
 
-    private var dayStatusState by mutableStateOf(prefs.getBoolean("day_status", false))
-    val dayStatusEnabled: Boolean get() = dayStatusState
-
     // ── پنجرهٔ تاریخ (بی اعلان)
 
     private var overlayEnabledState by mutableStateOf(prefs.getBoolean("overlay_enabled", true))
@@ -107,7 +84,7 @@ class AppState(val context: Context) {
     val overlaySpot: OverlaySpot get() = overlaySpotState
 
     private var overlaySizeState by mutableStateOf(
-        OverlaySize.values().firstOrNull { it.sp == prefs.getInt("overlay_size", 22) }
+        OverlaySize.values().firstOrNull { it.sp == prefs.getInt("overlay_size", 36) }
             ?: OverlaySize.MEDIUM
     )
     val overlaySize: OverlaySize get() = overlaySizeState
@@ -121,30 +98,16 @@ class AppState(val context: Context) {
     private var overlayShortState by mutableStateOf(prefs.getBoolean("overlay_short", false))
     val overlayShort: Boolean get() = overlayShortState
 
+    private var overlayPlateState by mutableStateOf(prefs.getBoolean("overlay_plate", true))
+    val overlayPlate: Boolean get() = overlayPlateState
+
     /** آیا سرویس دسترس‌پذیری (که تاریخ را روی صفحه می‌کشد) روشن است؟ */
     private var overlayReadyState by mutableStateOf(false)
     val overlayReady: Boolean get() = overlayReadyState
 
-    private var statusPositionState by mutableStateOf(
-        StatusPosition.values().firstOrNull {
-            it.key == prefs.getString("status_position", StatusPosition.RIGHT.key)
-        } ?: StatusPosition.RIGHT
-    )
-    val statusPosition: StatusPosition get() = statusPositionState
-
-    private var statusTextState by mutableStateOf(
-        StatusText.values().firstOrNull {
-            it.key == prefs.getString("status_text", StatusText.FULL.key)
-        } ?: StatusText.FULL
-    )
-    val statusText: StatusText get() = statusTextState
-
-    private var statusModeState by mutableStateOf(
-        StatusMode.values().firstOrNull {
-            it.key == prefs.getString("status_mode", StatusMode.ALWAYS.key)
-        } ?: StatusMode.ALWAYS
-    )
-    val statusMode: StatusMode get() = statusModeState
+    /** آیا پنجرهٔ تاریخ همین حالا روی صفحه ایستاده است؟ */
+    private var overlayLiveState by mutableStateOf(false)
+    val overlayLive: Boolean get() = overlayLiveState
 
     // ───────────────────────────────────────── حرکت در تقویم
 
@@ -189,6 +152,7 @@ class AppState(val context: Context) {
 
     fun refreshToday() {
         overlayReadyState = LockDateOverlay.isEnabled(context)
+        overlayLiveState = overlayReadyState && LockDateOverlay.attachedNow
         val now = IranianCalendar.todayEpochDay()
         if (now != todayEpochDay) {
             todayEpochDay = now
@@ -233,14 +197,6 @@ class AppState(val context: Context) {
         prefs.edit().putBoolean("today_only", value).apply()
     }
 
-    /** تاریخ در نوار وضعیت و بر صفحهٔ قفل */
-    fun setDayStatus(enabled: Boolean) {
-        dayStatusState = enabled
-        prefs.edit().putBoolean("day_status", enabled).apply()
-        runCatching { DayStatus.refresh(context, enabled) }
-        DayStatusService.apply(context)
-    }
-
     // ───────────────────────────────────────── پنجرهٔ تاریخ (بی اعلان)
 
     fun setOverlayEnabled(enabled: Boolean) {
@@ -273,42 +229,14 @@ class AppState(val context: Context) {
         prefs.edit().putBoolean("overlay_short", value).apply()
     }
 
+    fun setOverlayPlate(value: Boolean) {
+        overlayPlateState = value
+        prefs.edit().putBoolean("overlay_plate", value).apply()
+    }
+
     /** پس از بازگشت از صفحهٔ تنظیماتِ اندروید دوباره سنجیده می‌شود */
     fun refreshOverlayReady() {
         overlayReadyState = LockDateOverlay.isEnabled(context)
-    }
-
-    /** جای متن در نوار وضعیت */
-    fun setStatusPosition(position: StatusPosition) {
-        statusPositionState = position
-        prefs.edit().putString("status_position", position.key).apply()
-        runCatching { DayStatus.show(context) }
-    }
-
-    /** کوتاه یا کامل بودن متن نوار وضعیت */
-    fun setStatusText(text: StatusText) {
-        statusTextState = text
-        prefs.edit().putString("status_text", text.key).apply()
-        runCatching { DayStatus.show(context) }
-    }
-
-    /** همیشه، یا تنها بر صفحهٔ قفل */
-    fun setStatusMode(mode: StatusMode) {
-        statusModeState = mode
-        prefs.edit().putString("status_mode", mode.key).apply()
-        runCatching {
-            if (mode == StatusMode.ALWAYS) DayStatus.show(context) else DayStatus.hide(context)
-        }
-        DayStatusService.apply(context)
-    }
-
-    /** هم‌گام‌سازی تاریخ با امروز (هنگام گشودن یا بازگشت به برنامه) */
-    fun syncDayStatus() {
-        if (!dayStatusState) return
-        runCatching {
-            if (statusModeState == StatusMode.ALWAYS) DayStatus.show(context)
-        }
-        DayStatusService.apply(context)
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش

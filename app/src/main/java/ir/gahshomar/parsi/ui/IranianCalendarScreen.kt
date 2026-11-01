@@ -1,11 +1,7 @@
 package ir.gahshomar.parsi.ui
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -852,10 +848,6 @@ private fun FestivalSheetContent(state: AppState, festival: Festival, onClose: (
 private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
     val palette = LocalGahPalette.current
     val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted && state.dayStatusEnabled) state.syncDayStatus() }
-
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 30.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
@@ -913,15 +905,19 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = if (state.overlayReady) "روشن" else "خاموش",
+                text = when {
+                    state.overlayLive -> "ایستاده بر صفحه"
+                    state.overlayReady -> "سرویس روشن"
+                    else -> "سرویس خاموش"
+                },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (state.overlayReady) palette.turquoise else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (state.overlayReady) palette.turquoise else palette.gold
             )
         }
         Spacer(Modifier.height(4.dp))
         SettingSwitch(
-            title = "تاریخ همیشه دیده شود",
-            subtitle = "با متن خوانا در نوار وضعیت و بر صفحهٔ قفل — بی هیچ اعلانی، برگهٔ اعلان‌ها پاک می‌ماند",
+            title = "تاریخ بزرگ روی صفحه",
+            subtitle = "متنِ درشت، بی هیچ اعلانی؛ برگهٔ اعلان‌ها و نوار وضعیت از اعلان پاک می‌مانَد",
             checked = state.overlayEnabled,
             onCheckedChange = { state.setOverlayEnabled(it) }
         )
@@ -929,9 +925,9 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         if (state.overlayEnabled && !state.overlayReady) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "برای اینکه اندروید اجازهٔ نشان‌دادن تاریخ روی نوار وضعیت و صفحهٔ قفل را بدهد، " +
-                    "باید سرویس «گاه‌شمار ایرانی» را در تنظیمات دسترس‌پذیری روشن کنید. " +
-                    "این سرویس هیچ محتوایی از صفحه نمی‌خواند و تنها یک متن می‌کشد.",
+                text = "اندروید برای این کار به سرویس دسترس‌پذیری نیاز دارد. یک‌بار «گاه‌شمار " +
+                    "ایرانی» را در تنظیمات دسترس‌پذیری روشن کنید؛ سرویس هیچ محتوایی از صفحه " +
+                    "نمی‌خواند، هیچ اطلاعاتی نمی‌فرستد و تنها یک متن می‌کشد.",
                 style = MaterialTheme.typography.labelSmall,
                 color = palette.gold
             )
@@ -954,9 +950,64 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     }
                     .padding(vertical = 11.dp)
             )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "اگر کلیدِ روشن‌کردن خاکستری است: در همان صفحه، کنار نام برنامه سه‌نقطه ← " +
+                    "«اجازهٔ تنظیمات محدود» را بزنید. اندروید ۱۳ به بالا این را برای برنامه‌هایی " +
+                    "که از بیرونِ فروشگاه نصب می‌شوند لازم می‌داند.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         if (state.overlayEnabled && state.overlayReady) {
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "اندازهٔ متن",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "نمونه",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OverlaySize.values().forEach { size ->
+                    ChoiceChip(
+                        text = size.label,
+                        active = state.overlaySize == size,
+                        onClick = { state.setOverlaySize(size) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = PersianText.statusLabel(
+                        state.todayDate,
+                        state.persianDigits,
+                        state.overlayShort
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = palette.gold,
+                    fontSize = state.overlaySize.sp.sp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
+
             Spacer(Modifier.height(10.dp))
             Text(
                 text = "جای تاریخ",
@@ -977,23 +1028,6 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "اندازهٔ متن",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OverlaySize.values().forEach { size ->
-                    ChoiceChip(
-                        text = size.label,
-                        active = state.overlaySize == size,
-                        onClick = { state.setOverlaySize(size) }
-                    )
-                }
-            }
-
             Spacer(Modifier.height(6.dp))
             SettingSwitch(
                 title = "متن کوتاه",
@@ -1008,47 +1042,63 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 onCheckedChange = { state.setOverlayShowYear(it) }
             )
             SettingSwitch(
+                title = "زمینهٔ نیم‌شفاف پشت متن",
+                subtitle = "روی هر تصویری خوانا می‌مانَد",
+                checked = state.overlayPlate,
+                onCheckedChange = { state.setOverlayPlate(it) }
+            )
+            SettingSwitch(
                 title = "فقط هنگام قفل بودن صفحه",
                 subtitle = "بیرون از قفل، تاریخ پنهان می‌شود",
                 checked = state.overlayLockOnly,
                 onCheckedChange = { state.setOverlayLockOnly(it) }
             )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "بررسی دوباره",
+                style = MaterialTheme.typography.labelMedium,
+                color = palette.gold,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .border(1.dp, palette.gold.copy(alpha = 0.6f), CircleShape)
+                    .clickable { state.refreshOverlayReady() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
         }
 
         Spacer(Modifier.height(14.dp))
-        SettingSwitch(
-            title = "اعلانِ نوار وضعیت (اختیاری)",
-            subtitle = "اگر می‌خواهید تاریخ به‌شکل اعلان هم بمانَد؛ بی صدا و بی لرزش",
-            checked = state.dayStatusEnabled,
-            onCheckedChange = { enabled ->
-                if (enabled && Build.VERSION.SDK_INT >= 33) {
-                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-                state.setDayStatus(enabled)
-            }
+        Text(
+            text = "صفحهٔ همیشه‌روشن (AOD)",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (state.dayStatusEnabled) {
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusPosition.values().forEach { position ->
-                    ChoiceChip(
-                        text = position.label,
-                        active = state.statusPosition == position,
-                        onClick = { state.setStatusPosition(position) }
-                    )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "صفحهٔ همیشه‌روشن را سامانه می‌کشد و هیچ برنامه‌ای اجازهٔ نوشتن بر آن را ندارد؛ " +
+                "تنها چیزی که آنجا از برنامه‌ها دیده می‌شود نشانِ ریزِ اعلان است — همان که " +
+                "ناخوانا بود. نزدیک‌ترین جایگزین، «محافظ صفحه»ٔ اندروید است: تاریخ با حروف " +
+                "بسیار درشت بر زمینهٔ سیاه. در تنظیماتِ محافظ صفحه، «گاه‌شمار ایرانی — تاریخ " +
+                "درشت» را برگزینید و زمانِ آغازش را «هنگام شارژ» یا «هنگام شارژ یا بی‌کاری» بگذارید.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "گشودن تنظیماتِ محافظ صفحه",
+            style = MaterialTheme.typography.labelLarge,
+            color = palette.onGold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(palette.gold)
+                .clickable {
+                    runCatching {
+                        context.startActivity(Intent(android.provider.Settings.ACTION_DREAM_SETTINGS))
+                    }
                 }
-            }
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusMode.values().forEach { mode ->
-                    ChoiceChip(
-                        text = mode.label,
-                        active = state.statusMode == mode,
-                        onClick = { state.setStatusMode(mode) }
-                    )
-                }
-            }
-        }
+                .padding(vertical = 11.dp)
+        )
 
         Spacer(Modifier.height(14.dp))
         SettingSwitch(

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- برنامه کامل آفلاین است؛ هیچ دسترسی اینترنت درخواست نمی‌کند. -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--
+      برنامه کامل آفلاین است: هیچ دسترسی اینترنت درخواست نمی‌کند و هیچ اجازه‌ای
+      جز آنچه سرویس دسترس‌پذیریِ خودش لازم دارد نمی‌گیرد. این برنامه هیچ اعلانی
+      نمی‌سازد، پس اجازهٔ اعلان هم نمی‌خواهد.
+    -->
 
     <application
         android:allowBackup="true"
@@ -27,15 +29,6 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name=".notify.DayStatusReceiver"
-            android:exported="false" />
-
-        <service
-            android:name=".notify.DayStatusService"
-            android:exported="false"
-            android:stopWithTask="false" />
-
         <!-- تاریخ روی نوار وضعیت و صفحهٔ قفل، بی هیچ اعلانی -->
         <service
             android:name=".notify.LockDateOverlay"
@@ -50,12 +43,23 @@
                 android:resource="@xml/accessibility_lockdate" />
         </service>
 
-        <receiver
-            android:name=".notify.BootReceiver"
-            android:exported="false">
+        <!--
+          صفحهٔ همیشه‌روشن (AOD) را سامانه می‌کشد و برنامه‌ها نمی‌توانند روی آن بنویسند.
+          نزدیک‌ترین راه، محافظ صفحهٔ اندروید است: تاریخ با حروفِ درشت بر زمینهٔ سیاه.
+        -->
+        <service
+            android:name=".notify.DateDreamService"
+            android:exported="true"
+            android:label="@string/dream_label"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </receiver>
+            <meta-data
+                android:name="android.service.dream"
+                android:resource="@xml/date_dream" />
+        </service>
+
     </application>
 </manifest>

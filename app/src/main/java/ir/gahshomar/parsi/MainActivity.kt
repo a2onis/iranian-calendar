@@ -1,18 +1,14 @@
 package ir.gahshomar.parsi
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import ir.gahshomar.parsi.notify.DayStatus
+import ir.gahshomar.parsi.notify.LegacyCleanup
 import ir.gahshomar.parsi.ui.AppState
 import ir.gahshomar.parsi.ui.GahshomarApp
 import java.util.Locale
@@ -20,14 +16,6 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
 
     private lateinit var state: AppState
-
-    /** در اندروید ۱۳ و بالاتر، اجازهٔ نمایش در نوار وضعیت را یک‌بار می‌پرسیم */
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted && ::state.isInitialized) {
-                runCatching { DayStatus.refresh(this, state.dayStatusEnabled) }
-            }
-        }
 
     /**
      * برنامه به‌طور کامل فارسی و راست‌به‌چپ است؛ مستقل از زبان دستگاه.
@@ -43,37 +31,27 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // اعلان‌های نسخه‌های پیشین یک‌بار برداشته می‌شوند؛ تاریخ بی‌اعلان نشان داده می‌شود
-        DayStatus.retire(this)
+        // بازماندهٔ اعلان‌های نسخه‌های پیشین یک‌بار و برای همیشه پاک می‌شود؛
+        // از این نسخه هیچ اعلانی ساخته نمی‌شود.
+        LegacyCleanup.clear(this)
         state = AppState(applicationContext)
         setContent {
             Surface(modifier = Modifier.fillMaxSize()) {
                 GahshomarApp(state)
             }
         }
-        // پس از نخستین نقش‌بندی: تاریخ در نوار وضعیت و پرسش اجازهٔ اطلاع‌رسانی
         window.decorView.post {
-            if (state.dayStatusEnabled) askNotificationPermission()
             state.refreshOverlayReady()
-            state.syncDayStatus()
-        }
-    }
-
-    private fun askNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted && state.dayStatusEnabled) {
-            runCatching { notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
+            state.refreshToday()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // بازخوانی «امروز» و تازه‌کردن تاریخِ نوار وضعیت (مثلاً پس از نیمه‌شب)
+        // بازخوانی «امروز» و وضعیت پنجرهٔ تاریخ (مثلاً پس از بازگشت از تنظیمات اندروید)
         if (::state.isInitialized) {
+            state.refreshOverlayReady()
             state.refreshToday()
-            state.syncDayStatus()
         }
     }
 }

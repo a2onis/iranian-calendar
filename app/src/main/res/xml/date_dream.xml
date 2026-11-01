@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- محافظ صفحهٔ گاه‌شمار: تاریخِ درشت بر زمینهٔ سیاه، همچون صفحهٔ همیشه‌روشن -->
+<dream xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="ir.gahshomar.parsi.MainActivity" />
