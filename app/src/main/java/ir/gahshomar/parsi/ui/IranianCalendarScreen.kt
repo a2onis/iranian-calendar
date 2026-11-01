@@ -9,6 +9,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -803,7 +805,11 @@ private fun FooterNote(state: AppState) {
 @Composable
 private fun FestivalSheetContent(state: AppState, festival: Festival, onClose: () -> Unit) {
     val palette = LocalGahPalette.current
-    Column(modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 30.dp)) {
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(start = 22.dp, end = 22.dp, bottom = 30.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KindBadge(kind = festival.kind)
             Spacer(Modifier.weight(1f))
@@ -850,7 +856,11 @@ private fun FestivalSheetContent(state: AppState, festival: Festival, onClose: (
 private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
     val palette = LocalGahPalette.current
     val context = LocalContext.current
-    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 30.dp)) {
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, bottom = 40.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(R.drawable.ic_logo),
@@ -993,23 +1003,53 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // ── جای تاریخ
+        // ── جای تاریخ — دو حالتِ جداگانه، هر کدام به‌یاد سپرده می‌شود
         Spacer(Modifier.height(10.dp))
         Text(
             text = "جای تاریخ",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(Modifier.height(6.dp))
-        OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
-            if (index > 0) Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                rowSpots.forEach { spot ->
-                    ChoiceChip(
-                        text = spot.label,
-                        active = state.overlaySpot == spot,
-                        onClick = { state.setOverlaySpot(spot) }
-                    )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "متن را با انگشت بکشید تا هر جا که می‌خواهید بایستد؛ همان‌جا برای همان حالت " +
+                "ذخیره می‌شود. دو حالت جدا دارید: هنگام استفاده از گوشی، و هنگام قفل بودنِ " +
+                "صفحه (همان نمایی که پیش از صفحهٔ همیشه‌روشن دیده می‌شود).",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        OverlayMode.values().forEach { mode ->
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = mode.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if ((mode == OverlayMode.LOCK) == state.overlayLocked) palette.turquoise
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "بازنشانی",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.gold,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .border(1.dp, palette.gold.copy(alpha = 0.5f), CircleShape)
+                        .clickable { state.resetOverlaySpot(mode) }
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+            Spacer(Modifier.height(5.dp))
+            OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
+                if (index > 0) Spacer(Modifier.height(5.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    rowSpots.forEach { spot ->
+                        ChoiceChip(
+                            text = spot.label,
+                            active = state.overlaySpot(mode) == spot,
+                            onClick = { state.setOverlaySpot(mode, spot) }
+                        )
+                    }
                 }
             }
         }
@@ -1043,9 +1083,7 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.Black.copy(alpha = 0.55f))
-                .padding(vertical = 10.dp, horizontal = 8.dp),
+                .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -1074,12 +1112,6 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             subtitle = "۸ آبان • ۲۵۸۵",
             checked = state.overlayShowYear,
             onCheckedChange = { state.setOverlayShowYear(it) }
-        )
-        SettingSwitch(
-            title = "زمینهٔ نیم‌شفاف پشت متن",
-            subtitle = "روی هر تصویری خوانا می‌مانَد",
-            checked = state.overlayPlate,
-            onCheckedChange = { state.setOverlayPlate(it) }
         )
 
         // ── صفحهٔ همیشه‌روشن

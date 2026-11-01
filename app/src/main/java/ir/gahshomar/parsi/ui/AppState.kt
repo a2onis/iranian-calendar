@@ -14,22 +14,29 @@ import ir.gahshomar.parsi.notify.OverlayService
 import ir.gahshomar.parsi.notify.OverlayStyle
 import ir.gahshomar.parsi.ui.theme.Season
 
-/** جای تاریخ در نوار وضعیت */
+/** جای تاریخ روی صفحه */
 enum class OverlaySpot(val key: String, val label: String) {
     BAR_START("barStart", "چپِ نوار"),
     BAR_CENTER("barCenter", "میانِ نوار"),
     BAR_END("barEnd", "راستِ نوار"),
     BELOW_START("belowStart", "زیرِ نوار — چپ"),
-    BELOW_END("belowEnd", "زیرِ نوار — راست")
+    BELOW_END("belowEnd", "زیرِ نوار — راست"),
+    CENTER("center", "میانِ صفحه")
+}
+
+/** دو حالتِ جای تاریخ: هنگام استفاده و هنگام قفل/همیشه‌روشن */
+enum class OverlayMode(val key: String, val label: String) {
+    ACTIVE("active", "در حال استفاده"),
+    LOCK("lock", "صفحهٔ قفل / همیشه‌روشن")
 }
 
 /** اندازهٔ متن تاریخ روی صفحه */
 enum class OverlaySize(val sp: Int, val label: String) {
-    SMALL(20, "۲۰"),
-    MEDIUM(28, "۲۸"),
-    LARGE(36, "۳۶"),
-    HUGE(48, "۴۸"),
-    GIANT(64, "۶۴")
+    SMALL(14, "۱۴"),
+    MEDIUM(18, "۱۸"),
+    LARGE(24, "۲۴"),
+    HUGE(30, "۳۰"),
+    GIANT(40, "۴۰")
 }
 
 enum class ThemeMode(val label: String) {
@@ -78,15 +85,26 @@ class AppState(val context: Context) {
     private var overlayEnabledState by mutableStateOf(prefs.getBoolean("overlay_enabled", true))
     val overlayEnabled: Boolean get() = overlayEnabledState
 
-    private var overlaySpotState by mutableStateOf(
+    private fun spotOf(mode: OverlayMode): OverlaySpot =
         OverlaySpot.values().firstOrNull {
-            it.key == prefs.getString("overlay_position", OverlaySpot.BAR_END.key)
-        } ?: OverlaySpot.BAR_END
-    )
-    val overlaySpot: OverlaySpot get() = overlaySpotState
+            it.key == OverlayStyle.spot(context, mode.key)
+        } ?: OverlaySpot.BAR_START
+
+    private var overlaySpotActiveState by mutableStateOf(spotOf(OverlayMode.ACTIVE))
+    val overlaySpotActive: OverlaySpot get() = overlaySpotActiveState
+
+    private var overlaySpotLockState by mutableStateOf(spotOf(OverlayMode.LOCK))
+    val overlaySpotLock: OverlaySpot get() = overlaySpotLockState
+
+    fun overlaySpot(mode: OverlayMode): OverlaySpot =
+        if (mode == OverlayMode.LOCK) overlaySpotLockState else overlaySpotActiveState
+
+    /** آیا گوشی همین حالا قفل است؟ */
+    private var overlayLockedState by mutableStateOf(OverlayStyle.isLocked(context))
+    val overlayLocked: Boolean get() = overlayLockedState
 
     private var overlaySizeState by mutableStateOf(
-        OverlaySize.values().firstOrNull { it.sp == prefs.getInt("overlay_size", 36) }
+        OverlaySize.values().firstOrNull { it.sp == prefs.getInt("overlay_size", 18) }
             ?: OverlaySize.MEDIUM
     )
     val overlaySize: OverlaySize get() = overlaySizeState
@@ -96,9 +114,6 @@ class AppState(val context: Context) {
 
     private var overlayShortState by mutableStateOf(prefs.getBoolean("overlay_short", false))
     val overlayShort: Boolean get() = overlayShortState
-
-    private var overlayPlateState by mutableStateOf(prefs.getBoolean("overlay_plate", true))
-    val overlayPlate: Boolean get() = overlayPlateState
 
     /** آیا سرویس دسترس‌پذیری (که تاریخ را روی صفحه می‌کشد) روشن است؟ */
     private var overlayReadyState by mutableStateOf(false)
@@ -224,9 +239,19 @@ class AppState(val context: Context) {
         syncOverlay()
     }
 
-    fun setOverlaySpot(spot: OverlaySpot) {
-        overlaySpotState = spot
-        prefs.edit().putString("overlay_position", spot.key).apply()
+    /** جای تاریخ برای یکی از دو حالت ذخیره می‌شود */
+    fun setOverlaySpot(mode: OverlayMode, spot: OverlaySpot) {
+        OverlayStyle.setSpot(context, mode.key, spot.key)
+        if (mode == OverlayMode.LOCK) overlaySpotLockState = spot else overlaySpotActiveState = spot
+        refreshOverlayReady()
+    }
+
+    /** بازگرداندنِ جای یکی از دو حالت به پیش‌فرض */
+    fun resetOverlaySpot(mode: OverlayMode) {
+        OverlayStyle.resetPosition(context, mode.key)
+        val spot = spotOf(mode)
+        if (mode == OverlayMode.LOCK) overlaySpotLockState = spot else overlaySpotActiveState = spot
+        refreshOverlayReady()
     }
 
     fun setOverlaySize(size: OverlaySize) {
@@ -244,17 +269,14 @@ class AppState(val context: Context) {
         prefs.edit().putBoolean("overlay_short", value).apply()
     }
 
-    fun setOverlayPlate(value: Boolean) {
-        overlayPlateState = value
-        prefs.edit().putBoolean("overlay_plate", value).apply()
-    }
-
     /** پس از بازگشت از صفحهٔ تنظیماتِ اندروید دوباره سنجیده می‌شود */
     fun refreshOverlayReady() {
         overlayReadyState = LockDateOverlay.isEnabled(context)
         overlayCanDrawState = Settings.canDrawOverlays(context)
         overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
-        overlayStatusState = OverlayStyle.status(context)
+        overlayLockedState = OverlayStyle.isLocked(context)
+        overlaySpotActiveState = spotOf(OverlayMode.ACTIVE)
+        overlaySpotLockState = spotOf(OverlayMode.LOCK)
         syncOverlay()
         overlayStatusState = OverlayStyle.status(context)
     }
