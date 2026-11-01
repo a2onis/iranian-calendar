@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_summary">تاریخ گاه‌شمار ایرانی را با حروف درشت در نوار وضعیت و بر صفحهٔ قفل نشان می‌دهد؛ بدون هیچ اعلانی.</string>
+    <string name="dream_label">گاه‌شمار ایرانی — تاریخ درشت</string>
+    <string name="accessibility_description">فقط یک پنجرهٔ متنی با تاریخ ایرانی می‌کشد. این سرویس هیچ محتوایی از صفحه نمی‌خواند و اطلاعاتی جایی نمی‌فرستد.</string>
+</resources>
