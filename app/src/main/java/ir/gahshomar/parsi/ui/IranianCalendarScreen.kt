@@ -1,7 +1,12 @@
 package ir.gahshomar.parsi.ui
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -906,34 +911,91 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             )
             Text(
                 text = when {
-                    state.overlayLive -> "ایستاده بر صفحه"
-                    state.overlayReady -> "سرویس روشن"
-                    else -> "سرویس خاموش"
+                    state.overlayLive -> "روی صفحه است"
+                    state.overlayReady || state.overlayCanDraw -> "راه: ${state.overlayPath}"
+                    else -> "هنوز راهی روشن نیست"
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (state.overlayReady) palette.turquoise else palette.gold
+                color = if (state.overlayReady || state.overlayCanDraw) palette.turquoise else palette.gold
             )
         }
         Spacer(Modifier.height(4.dp))
         SettingSwitch(
             title = "تاریخ بزرگ روی صفحه",
-            subtitle = "متنِ درشت، بی هیچ اعلانی؛ برگهٔ اعلان‌ها و نوار وضعیت از اعلان پاک می‌مانَد",
+            subtitle = "متنِ درشت، بی هیچ اعلانی",
             checked = state.overlayEnabled,
             onCheckedChange = { state.setOverlayEnabled(it) }
         )
 
-        if (state.overlayEnabled && !state.overlayReady) {
-            Spacer(Modifier.height(6.dp))
+        // ── راهِ یکم: سرویس دسترس‌پذیری (تنها راهی که به صفحهٔ قفل هم می‌رسد)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = if (state.overlayReady) "۱. سرویس دسترس‌پذیری — روشن ✅" else "۱. سرویس دسترس‌پذیری",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = if (state.overlayReady) {
+                "تاریخ بر نوار وضعیت و صفحهٔ قفل دیده می‌شود."
+            } else {
+                "اگر اندروید پیام «تنظیمات محدود / Restricted setting» داد، یعنی برای " +
+                    "برنامه‌های نصب‌شده از بیرونِ فروشگاه، کلیدِ روشن‌کردن را خودِ کاربر " +
+                    "باید آزاد کند:"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (!state.overlayReady) {
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = "اندروید برای این کار به سرویس دسترس‌پذیری نیاز دارد. یک‌بار «گاه‌شمار " +
-                    "ایرانی» را در تنظیمات دسترس‌پذیری روشن کنید؛ سرویس هیچ محتوایی از صفحه " +
-                    "نمی‌خواند، هیچ اطلاعاتی نمی‌فرستد و تنها یک متن می‌کشد.",
+                text = "تنظیمات ← برنامه‌ها ← دیدنِ همهٔ برنامه‌ها ← «گاه‌شمار ایرانی» ← " +
+                    "سه‌نقطهٔ گوشهٔ بالا ← «اجازهٔ تنظیمات محدود» (Allow restricted settings). " +
+                    "سپس دوباره به اینجا برگردید و کلیدِ زیر را بزنید.\n" +
+                    "اگر گزینهٔ سه‌نقطه در آن صفحه نبود (در برخی رام‌ها پنهان است)، از راهِ " +
+                    "دومِ زیر استفاده کنید؛ همان تاریخ را با همان اندازه نشان می‌دهد.",
                 style = MaterialTheme.typography.labelSmall,
                 color = palette.gold
             )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = if (state.overlayReady) "تنظیماتِ دسترس‌پذیری" else "گشودن تنظیماتِ دسترس‌پذیری",
+            style = MaterialTheme.typography.labelLarge,
+            color = palette.onGold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(palette.gold)
+                .clickable {
+                    runCatching {
+                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                }
+                .padding(vertical = 11.dp)
+        )
+
+        // ── راهِ دوم: پنجرهٔ «روی برنامه‌ها» (بی دسترس‌پذیری، بی تنظیمات محدود)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = if (state.overlayCanDraw) "۲. نمایش روی برنامه‌های دیگر — روشن ✅"
+            else "۲. نمایش روی برنامه‌های دیگر",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = "این اجازه در همهٔ نسخه‌های اندروید آزاد است و «تنظیمات محدود» برایش " +
+                "پیش نمی‌آید. تاریخ با همان اندازه و همان جا، روی همهٔ برنامه‌ها و نوار وضعیت " +
+                "دیده می‌شود؛ تنها هنگام قفلِ صفحه پنهان می‌مانَد.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (!state.overlayCanDraw) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "روشن‌کردن سرویس دسترس‌پذیری",
+                text = "دادنِ اجازهٔ نمایش روی برنامه‌ها",
                 style = MaterialTheme.typography.labelLarge,
                 color = palette.onGold,
                 textAlign = TextAlign.Center,
@@ -944,24 +1006,60 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     .clickable {
                         runCatching {
                             context.startActivity(
-                                Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:${context.packageName}")
+                                )
                             )
                         }
                     }
                     .padding(vertical = 11.dp)
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = "اگر کلیدِ روشن‌کردن خاکستری است: در همان صفحه، کنار نام برنامه سه‌نقطه ← " +
-                    "«اجازهٔ تنظیمات محدود» را بزنید. اندروید ۱۳ به بالا این را برای برنامه‌هایی " +
-                    "که از بیرونِ فروشگاه نصب می‌شوند لازم می‌داند.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
 
-        if (state.overlayEnabled && state.overlayReady) {
-            Spacer(Modifier.height(10.dp))
+        // ── راهِ سوم: ویجت (بی هیچ اجازه‌ای)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = "۳. ویجتِ صفحهٔ اصلی",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = "بی هیچ اجازه‌ای: تاریخ با حروفِ درشت روی صفحهٔ اصلی. با نگه‌داشتنِ انگشت " +
+                "روی صفحهٔ اصلی ← «ویجت‌ها» ← «گاه‌شمار ایرانی» هم می‌توانید بگذاریدش.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "افزودنِ ویجت به صفحهٔ اصلی",
+            style = MaterialTheme.typography.labelLarge,
+            color = palette.gold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .border(1.dp, palette.gold.copy(alpha = 0.6f), CircleShape)
+                .clickable {
+                    runCatching {
+                        val manager = AppWidgetManager.getInstance(context)
+                        if (Build.VERSION.SDK_INT >= 26 &&
+                            manager.isRequestPinAppWidgetSupported
+                        ) {
+                            manager.requestPinAppWidget(
+                                ComponentName(context, ir.gahshomar.parsi.widget.DateWidgetProvider::class.java),
+                                null,
+                                null
+                            )
+                        }
+                    }
+                }
+                .padding(vertical = 11.dp)
+        )
+
+        if (state.overlayEnabled && (state.overlayReady || state.overlayCanDraw)) {
+            Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "اندازهٔ متن",

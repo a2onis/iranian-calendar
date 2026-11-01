@@ -1,6 +1,7 @@
 package ir.gahshomar.parsi.ui
 
 import android.content.Context
+import android.provider.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,6 +9,9 @@ import ir.gahshomar.parsi.core.IranianCalendar
 import ir.gahshomar.parsi.core.IranianDate
 import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.notify.LockDateOverlay
+import ir.gahshomar.parsi.notify.OverlayKeepAliveJob
+import ir.gahshomar.parsi.notify.OverlayService
+import ir.gahshomar.parsi.widget.DateWidgetProvider
 import ir.gahshomar.parsi.ui.theme.Season
 
 /** جای پنجرهٔ تاریخ روی صفحه */
@@ -105,9 +109,21 @@ class AppState(val context: Context) {
     private var overlayReadyState by mutableStateOf(false)
     val overlayReady: Boolean get() = overlayReadyState
 
+    /** آیا اجازهٔ «نمایش روی برنامه‌های دیگر» داده شده است؟ */
+    private var overlayCanDrawState by mutableStateOf(Settings.canDrawOverlays(context))
+    val overlayCanDraw: Boolean get() = overlayCanDrawState
+
     /** آیا پنجرهٔ تاریخ همین حالا روی صفحه ایستاده است؟ */
     private var overlayLiveState by mutableStateOf(false)
     val overlayLive: Boolean get() = overlayLiveState
+
+    /** کدام راه کار می‌کند: دسترس‌پذیری، پنجرهٔ روی برنامه‌ها، یا هیچ‌کدام */
+    val overlayPath: String
+        get() = when {
+            overlayReady -> "دسترس‌پذیری"
+            overlayCanDraw -> "پنجرهٔ روی برنامه‌ها"
+            else -> "—"
+        }
 
     // ───────────────────────────────────────── حرکت در تقویم
 
@@ -202,6 +218,7 @@ class AppState(val context: Context) {
     fun setOverlayEnabled(enabled: Boolean) {
         overlayEnabledState = enabled
         prefs.edit().putBoolean("overlay_enabled", enabled).apply()
+        syncOverlay()
     }
 
     fun setOverlaySpot(spot: OverlaySpot) {
@@ -237,6 +254,22 @@ class AppState(val context: Context) {
     /** پس از بازگشت از صفحهٔ تنظیماتِ اندروید دوباره سنجیده می‌شود */
     fun refreshOverlayReady() {
         overlayReadyState = LockDateOverlay.isEnabled(context)
+        overlayCanDrawState = Settings.canDrawOverlays(context)
+        overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
+        syncOverlay()
+    }
+
+    /** هر سه راه را با هم‌گام می‌کند: پنجره، کارِ نگه‌دارنده و ویجت */
+    private fun syncOverlay() {
+        runCatching { OverlayService.sync(context) }
+        runCatching { OverlayKeepAliveJob.ensure(context) }
+        runCatching { DateWidgetProvider.refresh(context) }
+        overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
+    }
+
+    /** ویجت را هم به تاریخِ امروز می‌آورد */
+    fun refreshWidget() {
+        runCatching { DateWidgetProvider.refresh(context) }
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش
