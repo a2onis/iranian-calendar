@@ -11,6 +11,7 @@ import ir.gahshomar.parsi.core.PersianText
 import ir.gahshomar.parsi.notify.LockDateOverlay
 import ir.gahshomar.parsi.notify.OverlayKeepAliveJob
 import ir.gahshomar.parsi.notify.OverlayService
+import ir.gahshomar.parsi.notify.OverlayStyle
 import ir.gahshomar.parsi.widget.DateWidgetProvider
 import ir.gahshomar.parsi.ui.theme.Season
 
@@ -116,6 +117,14 @@ class AppState(val context: Context) {
     /** آیا پنجرهٔ تاریخ همین حالا روی صفحه ایستاده است؟ */
     private var overlayLiveState by mutableStateOf(false)
     val overlayLive: Boolean get() = overlayLiveState
+
+    /** آخرین رویدادِ پنجرهٔ تاریخ (عیب‌یابی) */
+    private var overlayStatusState by mutableStateOf(OverlayStyle.status(context))
+    val overlayStatus: String get() = overlayStatusState
+
+    /** آیا ویجت روی صفحهٔ اصلی گذاشته شده است؟ */
+    private var widgetInstalledState by mutableStateOf(false)
+    val widgetInstalled: Boolean get() = widgetInstalledState
 
     /** کدام راه کار می‌کند: دسترس‌پذیری، پنجرهٔ روی برنامه‌ها، یا هیچ‌کدام */
     val overlayPath: String
@@ -256,7 +265,15 @@ class AppState(val context: Context) {
         overlayReadyState = LockDateOverlay.isEnabled(context)
         overlayCanDrawState = Settings.canDrawOverlays(context)
         overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
+        overlayStatusState = OverlayStyle.status(context)
+        widgetInstalledState = runCatching {
+            val manager = android.appwidget.AppWidgetManager.getInstance(context)
+            (manager?.getAppWidgetIds(
+                android.content.ComponentName(context, DateWidgetProvider::class.java)
+            )?.size ?: 0) > 0
+        }.getOrDefault(false)
         syncOverlay()
+        overlayStatusState = OverlayStyle.status(context)
     }
 
     /** هر سه راه را با هم‌گام می‌کند: پنجره، کارِ نگه‌دارنده و ویجت */

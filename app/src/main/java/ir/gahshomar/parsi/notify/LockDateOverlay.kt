@@ -60,7 +60,7 @@ class LockDateOverlay : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        attachedNow = true
+        OverlayStyle.report(this, "سرویس دسترس‌پذیری وصل شد")
         refresh()
         handler.post(ticker)
         // پنجرهٔ دسترس‌پذیری بر صفحهٔ قفل هم می‌نشیند؛ نسخهٔ «روی برنامه‌ها» لازم نیست
@@ -116,9 +116,19 @@ class LockDateOverlay : AccessibilityService() {
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
             }
         }
+        val added = runCatching { manager.addView(text, layoutParams) }
+        if (added.isFailure) {
+            // پنجره باز نشد؛ نباید چیزی را «باز» بشماریم تا تلاشِ دوباره انجام شود
+            view = null
+            params = null
+            attachedNow = false
+            OverlayStyle.report(this, "افزودنِ پنجره ناموفق: ${added.exceptionOrNull()?.message}")
+            return
+        }
         view = text
         params = layoutParams
-        runCatching { manager.addView(text, layoutParams) }
+        attachedNow = true
+        OverlayStyle.report(this, "پنجره بر نوار وضعیت و صفحهٔ قفل ایستاد")
         refresh()
     }
 
@@ -128,6 +138,7 @@ class LockDateOverlay : AccessibilityService() {
         runCatching { manager?.removeView(current) }
         view = null
         params = null
+        attachedNow = false
     }
 
     private fun refresh() {

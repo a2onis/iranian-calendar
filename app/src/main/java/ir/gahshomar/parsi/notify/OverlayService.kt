@@ -140,13 +140,16 @@ class OverlayService : Service() {
         }
         view = text
         params = layoutParams
-        val added = runCatching { manager.addView(text, layoutParams) }.isSuccess
-        if (!added) {
+        val added = runCatching { manager.addView(text, layoutParams) }
+        if (added.isFailure) {
             view = null
             params = null
+            attachedNow = false
+            OverlayStyle.report(this, "افزودنِ پنجرهٔ روی برنامه‌ها ناموفق: ${added.exceptionOrNull()?.message}")
             return
         }
         attachedNow = true
+        OverlayStyle.report(this, "پنجره روی برنامه‌ها ایستاد")
         refresh()
     }
 

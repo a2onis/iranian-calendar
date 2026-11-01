@@ -1,5 +1,6 @@
 package ir.gahshomar.parsi.widget
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -31,6 +32,7 @@ class DateWidgetProvider : AppWidgetProvider() {
         appWidgetIds.forEach { id ->
             runCatching { appWidgetManager.updateAppWidget(id, views) }
         }
+        scheduleMidnight(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -39,11 +41,48 @@ class DateWidgetProvider : AppWidgetProvider() {
             Intent.ACTION_DATE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
-            Intent.ACTION_BOOT_COMPLETED -> refresh(context)
+            ACTION_TICK, Intent.ACTION_BOOT_COMPLETED -> {
+                refresh(context)
+                scheduleMidnight(context)
+            }
         }
     }
 
     companion object {
+        private const val ACTION_TICK = "ir.gahshomar.parsi.WIDGET_TICK"
+        private const val REQUEST = 2586
+
+        /** بامداد هر روز، ویجت خودبه‌خود تاریخِ تازه می‌گیرد */
+        fun scheduleMidnight(context: Context) {
+            runCatching {
+                val manager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                    ?: return
+                val intent = Intent(context, DateWidgetProvider::class.java)
+                    .setAction(ACTION_TICK)
+                val pending = PendingIntent.getBroadcast(
+                    context,
+                    REQUEST,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val calendar = java.util.Calendar.getInstance().apply {
+                    set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    set(java.util.Calendar.MINUTE, 5)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) {
+                        add(java.util.Calendar.DAY_OF_YEAR, 1)
+                    }
+                }
+                manager.setInexactRepeating(
+                    AlarmManager.RTC,
+                    calendar.timeInMillis,
+                    AlarmManager.INTERVAL_DAY,
+                    pending
+                )
+            }
+        }
+
         /** تاریخِ ویجت را بی‌درنگ تازه می‌کند */
         fun refresh(context: Context) {
             runCatching {

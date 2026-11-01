@@ -32,6 +32,9 @@ object OverlayStyle {
     const val KEY_PLATE = "overlay_plate"
     const val KEY_COLOR = "overlay_color"
 
+    /** آخرین رویدادِ پنجره، برای نمایشِ عیب‌یابی در تنظیمات */
+    const val KEY_STATUS = "overlay_status"
+
     const val POS_BAR_START = "barStart"
     const val POS_BAR_CENTER = "barCenter"
     const val POS_BAR_END = "barEnd"
@@ -42,6 +45,14 @@ object OverlayStyle {
 
     fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    /** ثبتِ رویداد/خطای پنجره تا کاربر (و ما) بدانیم کجا ایستاده است */
+    fun report(context: Context, message: String) {
+        runCatching { prefs(context).edit().putString(KEY_STATUS, message).apply() }
+    }
+
+    fun status(context: Context): String =
+        prefs(context).getString(KEY_STATUS, "") ?: ""
 
     /** متنِ تاریخ بر پایهٔ تنظیمات کاربر */
     fun label(context: Context): String {

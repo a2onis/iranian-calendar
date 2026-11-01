@@ -902,258 +902,116 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         )
 
         Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "تاریخ روی صفحه",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = when {
-                    state.overlayLive -> "روی صفحه است"
-                    state.overlayReady || state.overlayCanDraw -> "راه: ${state.overlayPath}"
-                    else -> "هنوز راهی روشن نیست"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = if (state.overlayReady || state.overlayCanDraw) palette.turquoise else palette.gold
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        SettingSwitch(
-            title = "تاریخ بزرگ روی صفحه",
-            subtitle = "متنِ درشت، بی هیچ اعلانی",
-            checked = state.overlayEnabled,
-            onCheckedChange = { state.setOverlayEnabled(it) }
-        )
-
-        // ── راهِ یکم: سرویس دسترس‌پذیری (تنها راهی که به صفحهٔ قفل هم می‌رسد)
-        Spacer(Modifier.height(8.dp))
         Text(
-            text = if (state.overlayReady) "۱. سرویس دسترس‌پذیری — روشن ✅" else "۱. سرویس دسترس‌پذیری",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = if (state.overlayReady) {
-                "تاریخ بر نوار وضعیت و صفحهٔ قفل دیده می‌شود."
-            } else {
-                "اگر اندروید پیام «تنظیمات محدود / Restricted setting» داد، یعنی برای " +
-                    "برنامه‌های نصب‌شده از بیرونِ فروشگاه، کلیدِ روشن‌کردن را خودِ کاربر " +
-                    "باید آزاد کند:"
-            },
-            style = MaterialTheme.typography.labelSmall,
+            text = "تاریخ روی صفحه",
+            style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (!state.overlayReady) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "تنظیمات ← برنامه‌ها ← دیدنِ همهٔ برنامه‌ها ← «گاه‌شمار ایرانی» ← " +
-                    "سه‌نقطهٔ گوشهٔ بالا ← «اجازهٔ تنظیمات محدود» (Allow restricted settings). " +
-                    "سپس دوباره به اینجا برگردید و کلیدِ زیر را بزنید.\n" +
-                    "اگر گزینهٔ سه‌نقطه در آن صفحه نبود (در برخی رام‌ها پنهان است)، از راهِ " +
-                    "دومِ زیر استفاده کنید؛ همان تاریخ را با همان اندازه نشان می‌دهد.",
-                style = MaterialTheme.typography.labelSmall,
-                color = palette.gold
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (state.overlayReady) "تنظیماتِ دسترس‌پذیری" else "گشودن تنظیماتِ دسترس‌پذیری",
-            style = MaterialTheme.typography.labelLarge,
-            color = palette.onGold,
-            textAlign = TextAlign.Center,
+        Spacer(Modifier.height(6.dp))
+
+        // ── کارتِ وضعیت: هر سه راه، یکی‌یکی، با نشانِ روشن/خاموش
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(CircleShape)
-                .background(palette.gold)
-                .clickable {
-                    runCatching {
-                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    }
-                }
-                .padding(vertical = 11.dp)
-        )
-
-        // ── راهِ دوم: پنجرهٔ «روی برنامه‌ها» (بی دسترس‌پذیری، بی تنظیمات محدود)
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = if (state.overlayCanDraw) "۲. نمایش روی برنامه‌های دیگر — روشن ✅"
-            else "۲. نمایش روی برنامه‌های دیگر",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = "این اجازه در همهٔ نسخه‌های اندروید آزاد است و «تنظیمات محدود» برایش " +
-                "پیش نمی‌آید. تاریخ با همان اندازه و همان جا، روی همهٔ برنامه‌ها و نوار وضعیت " +
-                "دیده می‌شود؛ تنها هنگام قفلِ صفحه پنهان می‌مانَد.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (!state.overlayCanDraw) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "دادنِ اجازهٔ نمایش روی برنامه‌ها",
-                style = MaterialTheme.typography.labelLarge,
-                color = palette.onGold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(CircleShape)
-                    .background(palette.gold)
-                    .clickable {
-                        runCatching {
-                            context.startActivity(
-                                Intent(
-                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                    Uri.parse("package:${context.packageName}")
-                                )
-                            )
-                        }
-                    }
-                    .padding(vertical = 11.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.Black.copy(alpha = 0.28f))
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            StatusRow(
+                label = "سرویس دسترس‌پذیری",
+                ok = state.overlayReady,
+                hint = if (state.overlayReady) "روشن — نوار وضعیت و صفحهٔ قفل" else "خاموش"
             )
-        }
-
-        // ── راهِ سوم: ویجت (بی هیچ اجازه‌ای)
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = "۳. ویجتِ صفحهٔ اصلی",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = "بی هیچ اجازه‌ای: تاریخ با حروفِ درشت روی صفحهٔ اصلی. با نگه‌داشتنِ انگشت " +
-                "روی صفحهٔ اصلی ← «ویجت‌ها» ← «گاه‌شمار ایرانی» هم می‌توانید بگذاریدش.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "افزودنِ ویجت به صفحهٔ اصلی",
-            style = MaterialTheme.typography.labelLarge,
-            color = palette.gold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(CircleShape)
-                .border(1.dp, palette.gold.copy(alpha = 0.6f), CircleShape)
-                .clickable {
-                    runCatching {
-                        val manager = AppWidgetManager.getInstance(context)
-                        if (Build.VERSION.SDK_INT >= 26 &&
-                            manager.isRequestPinAppWidgetSupported
-                        ) {
-                            manager.requestPinAppWidget(
-                                ComponentName(context, ir.gahshomar.parsi.widget.DateWidgetProvider::class.java),
-                                null,
-                                null
-                            )
-                        }
-                    }
-                }
-                .padding(vertical = 11.dp)
-        )
-
-        if (state.overlayEnabled && (state.overlayReady || state.overlayCanDraw)) {
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            StatusRow(
+                label = "مجوز نمایش روی برنامه‌ها",
+                ok = state.overlayCanDraw,
+                hint = if (state.overlayCanDraw) "داده شده" else "داده نشده"
+            )
+            StatusRow(
+                label = "ویجتِ صفحهٔ اصلی",
+                ok = state.widgetInstalled,
+                hint = if (state.widgetInstalled) "گذاشته شده" else "گذاشته نشده"
+            )
+            StatusRow(
+                label = "پنجرهٔ تاریخ",
+                ok = state.overlayLive,
+                hint = if (state.overlayLive) "ایستاده بر صفحه" else "ایستاده نیست"
+            )
+            if (state.overlayStatus.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "اندازهٔ متن",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "نمونه",
+                    text = "آخرین رویداد: ${state.overlayStatus}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = palette.gold
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OverlaySize.values().forEach { size ->
-                    ChoiceChip(
-                        text = size.label,
-                        active = state.overlaySize == size,
-                        onClick = { state.setOverlaySize(size) }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "اگر پیام «تنظیمات محدود» آمد: تنظیمات ← برنامه‌ها ← «گاه‌شمار ایرانی» ← " +
+                "سه‌نقطهٔ گوشهٔ بالا ← «اجازهٔ تنظیمات محدود». یا با رایانه یک‌بار: " +
+                "adb shell appops set ir.gahshomar.parsi ACCESS_RESTRICTED_SETTINGS allow",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(10.dp))
+        ActionButton(
+            text = if (state.overlayReady) "۱. دسترس‌پذیری روشن است ✓" else "۱. روشن‌کردنِ سرویس دسترس‌پذیری",
+            filled = !state.overlayReady
+        ) {
+            runCatching { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        }
+        Spacer(Modifier.height(6.dp))
+        ActionButton(
+            text = if (state.overlayCanDraw) "۲. مجوز نمایش روی برنامه‌ها داده شده ✓"
+            else "۲. دادنِ مجوز نمایش روی برنامه‌ها",
+            filled = !state.overlayCanDraw
+        ) {
+            runCatching {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        ActionButton(
+            text = if (state.widgetInstalled) "۳. ویجت گذاشته شده ✓" else "۳. افزودنِ ویجت به صفحهٔ اصلی",
+            filled = !state.widgetInstalled
+        ) {
+            runCatching {
+                val manager = AppWidgetManager.getInstance(context)
+                if (Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
+                    manager.requestPinAppWidget(
+                        ComponentName(
+                            context,
+                            ir.gahshomar.parsi.widget.DateWidgetProvider::class.java
+                        ),
+                        null,
+                        null
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .padding(vertical = 10.dp, horizontal = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = PersianText.statusLabel(
-                        state.todayDate,
-                        state.persianDigits,
-                        state.overlayShort
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.gold,
-                    fontSize = state.overlaySize.sp.sp,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1
-                )
-            }
-
-            Spacer(Modifier.height(10.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "جای تاریخ",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                text = "تاریخِ روی صفحه روشن باشد",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(Modifier.height(6.dp))
-            OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
-                if (index > 0) Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    rowSpots.forEach { spot ->
-                        ChoiceChip(
-                            text = spot.label,
-                            active = state.overlaySpot == spot,
-                            onClick = { state.setOverlaySpot(spot) }
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-            SettingSwitch(
-                title = "متن کوتاه",
-                subtitle = if (state.overlayShort) "۸ آبان" else "دی به آذر ۸ آبان",
-                checked = state.overlayShort,
-                onCheckedChange = { state.setOverlayShort(it) }
+            Switch(
+                checked = state.overlayEnabled,
+                onCheckedChange = { state.setOverlayEnabled(it) }
             )
-            SettingSwitch(
-                title = "سال پهلوی هم نوشته شود",
-                subtitle = "۸ آبان • ۲۵۸۵",
-                checked = state.overlayShowYear,
-                onCheckedChange = { state.setOverlayShowYear(it) }
-            )
-            SettingSwitch(
-                title = "زمینهٔ نیم‌شفاف پشت متن",
-                subtitle = "روی هر تصویری خوانا می‌مانَد",
-                checked = state.overlayPlate,
-                onCheckedChange = { state.setOverlayPlate(it) }
-            )
-            SettingSwitch(
-                title = "فقط هنگام قفل بودن صفحه",
-                subtitle = "بیرون از قفل، تاریخ پنهان می‌شود",
-                checked = state.overlayLockOnly,
-                onCheckedChange = { state.setOverlayLockOnly(it) }
-            )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.width(10.dp))
             Text(
-                text = "بررسی دوباره",
+                text = "تازه‌سازی",
                 style = MaterialTheme.typography.labelMedium,
                 color = palette.gold,
                 modifier = Modifier
@@ -1163,6 +1021,100 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             )
         }
+
+        // ── اندازه و جای متن
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "اندازهٔ متن",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = "نمونه",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            OverlaySize.values().forEach { size ->
+                ChoiceChip(
+                    text = size.label,
+                    active = state.overlaySize == size,
+                    onClick = { state.setOverlaySize(size) }
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.Black.copy(alpha = 0.55f))
+                .padding(vertical = 10.dp, horizontal = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = PersianText.statusLabel(
+                    state.todayDate,
+                    state.persianDigits,
+                    state.overlayShort
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                color = palette.gold,
+                fontSize = state.overlaySize.sp.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "جای تاریخ",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(6.dp))
+        OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
+            if (index > 0) Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowSpots.forEach { spot ->
+                    ChoiceChip(
+                        text = spot.label,
+                        active = state.overlaySpot == spot,
+                        onClick = { state.setOverlaySpot(spot) }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+        SettingSwitch(
+            title = "متن کوتاه",
+            subtitle = if (state.overlayShort) "۸ آبان" else "دی به آذر ۸ آبان",
+            checked = state.overlayShort,
+            onCheckedChange = { state.setOverlayShort(it) }
+        )
+        SettingSwitch(
+            title = "سال پهلوی هم نوشته شود",
+            subtitle = "۸ آبان • ۲۵۸۵",
+            checked = state.overlayShowYear,
+            onCheckedChange = { state.setOverlayShowYear(it) }
+        )
+        SettingSwitch(
+            title = "زمینهٔ نیم‌شفاف پشت متن",
+            subtitle = "روی هر تصویری خوانا می‌مانَد",
+            checked = state.overlayPlate,
+            onCheckedChange = { state.setOverlayPlate(it) }
+        )
+        SettingSwitch(
+            title = "فقط هنگام قفل بودن صفحه",
+            subtitle = "بیرون از قفل، تاریخ پنهان می‌شود",
+            checked = state.overlayLockOnly,
+            onCheckedChange = { state.setOverlayLockOnly(it) }
+        )
 
         Spacer(Modifier.height(14.dp))
         Text(
@@ -1232,6 +1184,53 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+@Composable
+private fun StatusRow(label: String, ok: Boolean, hint: String) {
+    val palette = LocalGahPalette.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (ok) "✓" else "✕",
+            style = MaterialTheme.typography.labelLarge,
+            color = if (ok) palette.turquoise else palette.gold
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ActionButton(text: String, filled: Boolean, onClick: () -> Unit) {
+    val palette = LocalGahPalette.current
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (filled) palette.onGold else palette.gold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(CircleShape)
+            .background(if (filled) palette.gold else Color.Transparent)
+            .border(1.dp, palette.gold.copy(alpha = 0.7f), CircleShape)
+            .clickable { onClick() }
+            .padding(vertical = 11.dp)
+    )
 }
 
 @Composable
