@@ -338,6 +338,16 @@ class IranianCalendarTest {
     }
 
     @Test
+    fun overlaySpotsAndSizesAreDistinct() {
+        val spots = ir.gahshomar.parsi.ui.OverlaySpot.values()
+        assertEquals(spots.size, spots.map { it.key }.distinct().size)
+        assertEquals("barEnd", ir.gahshomar.parsi.ui.OverlaySpot.BAR_END.key)
+        val sizes = ir.gahshomar.parsi.ui.OverlaySize.values()
+        assertEquals(sizes.size, sizes.map { it.sp }.distinct().size)
+        assertTrue(sizes.last().sp > sizes.first().sp)
+    }
+
+    @Test
     fun gahOfDayCoversWholeDay() {
         val names = (0..23).map { IranianCalendar.gahOfDay(it) }.distinct()
         assertEquals(5, names.size)

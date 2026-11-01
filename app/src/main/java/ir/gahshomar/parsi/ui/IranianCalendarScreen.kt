@@ -102,6 +102,15 @@ fun IranianCalendarScreen(state: AppState, modifier: Modifier = Modifier) {
     }
     val todayFestivals = remember(selected) { Festivals.onEpochDay(selected) }
 
+    // تاریخ با گذشت روزها خودبه‌خود تازه می‌شود: هر دقیقه «امروز» از نو خوانده می‌شود
+    // (برنامه در نیمه‌شب باز مانده باشد، یا زمانی که دستگاه به وقت تازه‌ای برود).
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000L)
+            state.refreshToday()
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -889,16 +898,127 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "پوستهٔ «فصلی» با ماهِ ایرانی می‌گردد: بهار سبزِ روشن، تابستان فیروزه‌ای، " +
-                "پاییز نارنجیِ تیره و زمستان آبیِ یخی.",
+            text = "پوستهٔ «فصلی» با ماهِ برگزیده می‌گردد: بهار سبز، تابستان فیروزه‌ای، " +
+                "پاییز نارنجی و زمستان آبیِ یخی. امروز: ${state.seasonToday.label}.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(Modifier.height(14.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "تاریخ روی صفحه",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = if (state.overlayReady) "روشن" else "خاموش",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (state.overlayReady) palette.turquoise else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         SettingSwitch(
-            title = "تاریخ در نوار وضعیت و صفحهٔ قفل",
-            subtitle = "«۸ آبان / دی به آذر» با متن در نوار وضعیت، و با نام روز و جشن‌های امروز بر صفحهٔ قفل",
+            title = "تاریخ همیشه دیده شود",
+            subtitle = "با متن خوانا در نوار وضعیت و بر صفحهٔ قفل — بی هیچ اعلانی، برگهٔ اعلان‌ها پاک می‌ماند",
+            checked = state.overlayEnabled,
+            onCheckedChange = { state.setOverlayEnabled(it) }
+        )
+
+        if (state.overlayEnabled && !state.overlayReady) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "برای اینکه اندروید اجازهٔ نشان‌دادن تاریخ روی نوار وضعیت و صفحهٔ قفل را بدهد، " +
+                    "باید سرویس «گاه‌شمار ایرانی» را در تنظیمات دسترس‌پذیری روشن کنید. " +
+                    "این سرویس هیچ محتوایی از صفحه نمی‌خواند و تنها یک متن می‌کشد.",
+                style = MaterialTheme.typography.labelSmall,
+                color = palette.gold
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "روشن‌کردن سرویس دسترس‌پذیری",
+                style = MaterialTheme.typography.labelLarge,
+                color = palette.onGold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(CircleShape)
+                    .background(palette.gold)
+                    .clickable {
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            )
+                        }
+                    }
+                    .padding(vertical = 11.dp)
+            )
+        }
+
+        if (state.overlayEnabled && state.overlayReady) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "جای تاریخ",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
+                if (index > 0) Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    rowSpots.forEach { spot ->
+                        ChoiceChip(
+                            text = spot.label,
+                            active = state.overlaySpot == spot,
+                            onClick = { state.setOverlaySpot(spot) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "اندازهٔ متن",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OverlaySize.values().forEach { size ->
+                    ChoiceChip(
+                        text = size.label,
+                        active = state.overlaySize == size,
+                        onClick = { state.setOverlaySize(size) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            SettingSwitch(
+                title = "متن کوتاه",
+                subtitle = if (state.overlayShort) "۸ آبان" else "دی به آذر ۸ آبان",
+                checked = state.overlayShort,
+                onCheckedChange = { state.setOverlayShort(it) }
+            )
+            SettingSwitch(
+                title = "سال پهلوی هم نوشته شود",
+                subtitle = "۸ آبان • ۲۵۸۵",
+                checked = state.overlayShowYear,
+                onCheckedChange = { state.setOverlayShowYear(it) }
+            )
+            SettingSwitch(
+                title = "فقط هنگام قفل بودن صفحه",
+                subtitle = "بیرون از قفل، تاریخ پنهان می‌شود",
+                checked = state.overlayLockOnly,
+                onCheckedChange = { state.setOverlayLockOnly(it) }
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+        SettingSwitch(
+            title = "اعلانِ نوار وضعیت (اختیاری)",
+            subtitle = "اگر می‌خواهید تاریخ به‌شکل اعلان هم بمانَد؛ بی صدا و بی لرزش",
             checked = state.dayStatusEnabled,
             onCheckedChange = { enabled ->
                 if (enabled && Build.VERSION.SDK_INT >= 33) {
@@ -908,13 +1028,7 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             }
         )
         if (state.dayStatusEnabled) {
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "جای تاریخ در نوار وضعیت",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 StatusPosition.values().forEach { position ->
                     ChoiceChip(
@@ -924,30 +1038,6 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     )
                 }
             }
-
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "متن نوار وضعیت",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatusText.values().forEach { text ->
-                    ChoiceChip(
-                        text = text.label,
-                        active = state.statusText == text,
-                        onClick = { state.setStatusText(text) }
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "گاه‌شمار",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 StatusMode.values().forEach { mode ->
@@ -958,14 +1048,8 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "در حالت «فقط بر صفحهٔ قفل»، برگهٔ اعلان‌ها پاک می‌ماند و تاریخ تنها " +
-                    "بر صفحهٔ قفل و نوار وضعیتِ زمان قفل دیده می‌شود.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
+
         Spacer(Modifier.height(14.dp))
         SettingSwitch(
             title = "رقم‌های فارسی",

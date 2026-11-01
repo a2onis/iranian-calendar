@@ -43,7 +43,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DayStatus.ensureChannel(this)
+        // اعلان‌های نسخه‌های پیشین یک‌بار برداشته می‌شوند؛ تاریخ بی‌اعلان نشان داده می‌شود
+        DayStatus.retire(this)
         state = AppState(applicationContext)
         setContent {
             Surface(modifier = Modifier.fillMaxSize()) {
@@ -52,7 +53,8 @@ class MainActivity : ComponentActivity() {
         }
         // پس از نخستین نقش‌بندی: تاریخ در نوار وضعیت و پرسش اجازهٔ اطلاع‌رسانی
         window.decorView.post {
-            askNotificationPermission()
+            if (state.dayStatusEnabled) askNotificationPermission()
+            state.refreshOverlayReady()
             state.syncDayStatus()
         }
     }

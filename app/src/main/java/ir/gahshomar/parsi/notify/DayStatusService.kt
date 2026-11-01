@@ -63,7 +63,7 @@ class DayStatusService : Service() {
         /** در حالت «فقط بر صفحهٔ قفل» سرویس را روشن می‌کند، وگرنه خاموش */
         fun apply(context: Context) {
             val enabled = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-                .getBoolean("day_status", true)
+                .getBoolean("day_status", false)
             val intent = Intent(context, DayStatusService::class.java)
             runCatching {
                 if (enabled && onlyLocked(context)) context.startService(intent)

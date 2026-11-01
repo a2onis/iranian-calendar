@@ -8,7 +8,7 @@ import android.content.Intent
 class DayStatusReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val prefs = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-        if (!prefs.getBoolean("day_status", true)) return
+        if (!prefs.getBoolean("day_status", false)) return
         runCatching {
             DayStatus.show(context)
             DayStatus.scheduleMidnight(context)

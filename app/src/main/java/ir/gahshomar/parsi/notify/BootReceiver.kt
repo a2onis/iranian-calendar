@@ -9,7 +9,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val prefs = context.getSharedPreferences("gahshomar_prefs", Context.MODE_PRIVATE)
-        if (prefs.getBoolean("day_status", true)) {
+        if (prefs.getBoolean("day_status", false)) {
             runCatching { DayStatus.refresh(context, true) }
             DayStatusService.apply(context)
         }

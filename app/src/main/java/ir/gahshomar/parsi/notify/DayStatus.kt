@@ -281,6 +281,31 @@ object DayStatus {
         }
     }
 
+    /**
+     * اعلان‌های نسخه‌های پیشین یک‌بار و برای همیشه برداشته می‌شوند.
+     * از این پس تاریخ با پنجرهٔ بی‌اعلان (LockDateOverlay) نشان داده می‌شود،
+     * پس دیگر هیچ چیزی در برگهٔ اعلان‌ها نمی‌مانَد.
+     */
+    fun retire(context: Context) {
+        val prefs = prefs(context)
+        if (prefs.getBoolean("notif_retired", false)) return
+        runCatching { hide(context) }
+        runCatching { cancelMidnight(context) }
+        runCatching { DayStatusService.apply(context) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching {
+                val manager = context.getSystemService(NotificationManager::class.java)
+                listOf(CHANNEL_ID, "gahshomar_day_v4").forEach {
+                    manager?.deleteNotificationChannel(it)
+                }
+            }
+        }
+        prefs.edit()
+            .putBoolean("day_status", false)
+            .putBoolean("notif_retired", true)
+            .apply()
+    }
+
     fun cancelMidnight(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
         alarmManager?.cancel(midnightIntent(context))
