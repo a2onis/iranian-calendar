@@ -183,16 +183,14 @@ app/src/main/java/ir/gahshomar/parsi/
 │   ├── IranianCalendar.kt     گاه‌شماری ایرانی: ماه‌ها، روزهای نام‌دار، پنجه
 │   └── PersianText.kt         ارقام فارسی و قالب‌های تاریخ
 ├── data/
-│   └── Festivals.kt           ۵۹ جشن، آیین، گاهنبار، تاج‌گذاری و یادبود
+│   └── Festivals.kt           ۶۹ جشن، آیین، گاهنبار، تاج‌گذاری و یادبود
 ├── notify/
-│   ├── LockDateOverlay.kt     پنجرهٔ دسترس‌پذیری: تاریخِ درشت روی نوار و صفحهٔ قفل
-│   ├── DateDreamService.kt    محافظ صفحه: تاریخِ بسیار درشت بر زمینهٔ سیاه (جای AOD)
-│   ├── OverlayService.kt      پنجرهٔ «روی برنامه‌ها» (بی دسترس‌پذیری)
+│   ├── LockDateOverlay.kt     پنجرهٔ دسترس‌پذیری: تاریخِ درشت در نوار وضعیت
+│   ├── DateDreamService.kt    محافظ صفحه: تاریخِ بسیار درشت بر زمینهٔ سیاه (تنها جایگزینِ AOD)
+│   ├── OverlayService.kt      همان تاریخ با مجوز «نمایش روی برنامه‌ها»
+│   ├── OverlayStyle.kt        ساخت و چیدنِ مشترکِ متنِ تاریخ
 │   ├── OverlayKeepAliveJob.kt هر ۱۵ دقیقه پنجرهٔ تاریخ را برمی‌خیزاند
-│   ├── LegacyCleanup.kt       پاک‌سازی یک‌بارهٔ اعلان‌های نسخه‌های پیشین
-│   ├── DayStatusService.kt    حالت «فقط بر صفحهٔ قفل»
-│   ├── DayStatusReceiver.kt   تازه‌سازی بامدادی
-│   └── BootReceiver.kt        بازگردانی پس از روشن‌شدن دستگاه
+│   └── LegacyCleanup.kt       پاک‌سازی یک‌بارهٔ اعلان‌های نسخه‌های پیشین
 └── ui/
     ├── IranianCalendarScreen.kt  تنها صفحهٔ برنامه
     ├── Theme.kt                  رنگ‌ها، قلم‌ها، پوستهٔ تیره و روشن
