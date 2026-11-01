@@ -11,8 +11,8 @@ android {
         applicationId = "ir.gahshomar.parsi"
         minSdk = 24
         targetSdk = 34
-        versionCode = 12
-        versionName = "2.9.0"
+        versionCode = 13
+        versionName = "3.0.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

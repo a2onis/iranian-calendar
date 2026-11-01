@@ -1,11 +1,8 @@
 package ir.gahshomar.parsi.ui
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -903,13 +900,12 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
 
         Spacer(Modifier.height(14.dp))
         Text(
-            text = "تاریخ روی صفحه",
+            text = "تاریخ در نوار وضعیت",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(6.dp))
 
-        // ── کارتِ وضعیت: هر سه راه، یکی‌یکی، با نشانِ روشن/خاموش
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -920,7 +916,7 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             StatusRow(
                 label = "سرویس دسترس‌پذیری",
                 ok = state.overlayReady,
-                hint = if (state.overlayReady) "روشن — نوار وضعیت و صفحهٔ قفل" else "خاموش"
+                hint = if (state.overlayReady) "روشن" else "خاموش"
             )
             StatusRow(
                 label = "مجوز نمایش روی برنامه‌ها",
@@ -928,14 +924,9 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 hint = if (state.overlayCanDraw) "داده شده" else "داده نشده"
             )
             StatusRow(
-                label = "ویجتِ صفحهٔ اصلی",
-                ok = state.widgetInstalled,
-                hint = if (state.widgetInstalled) "گذاشته شده" else "گذاشته نشده"
-            )
-            StatusRow(
                 label = "پنجرهٔ تاریخ",
                 ok = state.overlayLive,
-                hint = if (state.overlayLive) "ایستاده بر صفحه" else "ایستاده نیست"
+                hint = if (state.overlayLive) "ایستاده" else "ایستاده نیست"
             )
             if (state.overlayStatus.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
@@ -947,18 +938,10 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = "اگر پیام «تنظیمات محدود» آمد: تنظیمات ← برنامه‌ها ← «گاه‌شمار ایرانی» ← " +
-                "سه‌نقطهٔ گوشهٔ بالا ← «اجازهٔ تنظیمات محدود». یا با رایانه یک‌بار: " +
-                "adb shell appops set ir.gahshomar.parsi ACCESS_RESTRICTED_SETTINGS allow",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         ActionButton(
-            text = if (state.overlayReady) "۱. دسترس‌پذیری روشن است ✓" else "۱. روشن‌کردنِ سرویس دسترس‌پذیری",
+            text = if (state.overlayReady) "۱. سرویس دسترس‌پذیری روشن است ✓"
+            else "۱. روشن‌کردنِ سرویس دسترس‌پذیری",
             filled = !state.overlayReady
         ) {
             runCatching { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
@@ -978,29 +961,10 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                 )
             }
         }
-        Spacer(Modifier.height(6.dp))
-        ActionButton(
-            text = if (state.widgetInstalled) "۳. ویجت گذاشته شده ✓" else "۳. افزودنِ ویجت به صفحهٔ اصلی",
-            filled = !state.widgetInstalled
-        ) {
-            runCatching {
-                val manager = AppWidgetManager.getInstance(context)
-                if (Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
-                    manager.requestPinAppWidget(
-                        ComponentName(
-                            context,
-                            ir.gahshomar.parsi.widget.DateWidgetProvider::class.java
-                        ),
-                        null,
-                        null
-                    )
-                }
-            }
-        }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "تاریخِ روی صفحه روشن باشد",
+                text = "تاریخ نشان داده شود",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
@@ -1021,8 +985,36 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             )
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "اگر پیام «تنظیمات محدود» آمد: تنظیمات ← برنامه‌ها ← «گاه‌شمار ایرانی» ← " +
+                "سه‌نقطهٔ گوشهٔ بالا ← «اجازهٔ تنظیمات محدود».",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-        // ── اندازه و جای متن
+        // ── جای تاریخ
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "جای تاریخ",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(6.dp))
+        OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
+            if (index > 0) Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowSpots.forEach { spot ->
+                    ChoiceChip(
+                        text = spot.label,
+                        active = state.overlaySpot == spot,
+                        onClick = { state.setOverlaySpot(spot) }
+                    )
+                }
+            }
+        }
+
+        // ── اندازه
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1070,26 +1062,6 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             )
         }
 
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = "جای تاریخ",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(6.dp))
-        OverlaySpot.values().toList().chunked(3).forEachIndexed { index, rowSpots ->
-            if (index > 0) Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                rowSpots.forEach { spot ->
-                    ChoiceChip(
-                        text = spot.label,
-                        active = state.overlaySpot == spot,
-                        onClick = { state.setOverlaySpot(spot) }
-                    )
-                }
-            }
-        }
-
         Spacer(Modifier.height(6.dp))
         SettingSwitch(
             title = "متن کوتاه",
@@ -1109,13 +1081,8 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
             checked = state.overlayPlate,
             onCheckedChange = { state.setOverlayPlate(it) }
         )
-        SettingSwitch(
-            title = "فقط هنگام قفل بودن صفحه",
-            subtitle = "بیرون از قفل، تاریخ پنهان می‌شود",
-            checked = state.overlayLockOnly,
-            onCheckedChange = { state.setOverlayLockOnly(it) }
-        )
 
+        // ── صفحهٔ همیشه‌روشن
         Spacer(Modifier.height(14.dp))
         Text(
             text = "صفحهٔ همیشه‌روشن (AOD)",
@@ -1124,31 +1091,17 @@ private fun SettingsSheetContent(state: AppState, onClose: () -> Unit) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "صفحهٔ همیشه‌روشن را سامانه می‌کشد و هیچ برنامه‌ای اجازهٔ نوشتن بر آن را ندارد؛ " +
-                "تنها چیزی که آنجا از برنامه‌ها دیده می‌شود نشانِ ریزِ اعلان است — همان که " +
-                "ناخوانا بود. نزدیک‌ترین جایگزین، «محافظ صفحه»ٔ اندروید است: تاریخ با حروف " +
-                "بسیار درشت بر زمینهٔ سیاه. در تنظیماتِ محافظ صفحه، «گاه‌شمار ایرانی — تاریخ " +
-                "درشت» را برگزینید و زمانِ آغازش را «هنگام شارژ» یا «هنگام شارژ یا بی‌کاری» بگذارید.",
+            text = "صفحهٔ همیشه‌روشن را خودِ سامانه می‌کشد و هیچ برنامه‌ای — بدون دسترسی ریشه — " +
+                "اجازهٔ نوشتن بر آن را ندارد؛ تنها چیزی که آنجا از برنامه‌ها می‌آید نشانِ ریزِ " +
+                "اعلان است. نزدیک‌ترین جایگزینی که در توانِ یک برنامه است، «محافظ صفحه» است: " +
+                "تاریخ با حروفِ بسیار درشت بر زمینهٔ سیاه.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
-        Text(
-            text = "گشودن تنظیماتِ محافظ صفحه",
-            style = MaterialTheme.typography.labelLarge,
-            color = palette.onGold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(CircleShape)
-                .background(palette.gold)
-                .clickable {
-                    runCatching {
-                        context.startActivity(Intent(android.provider.Settings.ACTION_DREAM_SETTINGS))
-                    }
-                }
-                .padding(vertical = 11.dp)
-        )
+        ActionButton(text = "گشودنِ تنظیماتِ محافظ صفحه", filled = false) {
+            runCatching { context.startActivity(Intent(Settings.ACTION_DREAM_SETTINGS)) }
+        }
 
         Spacer(Modifier.height(14.dp))
         SettingSwitch(

@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
         window.decorView.post {
             state.refreshOverlayReady()
             state.refreshToday()
-            state.refreshWidget()
         }
     }
 
@@ -53,7 +52,6 @@ class MainActivity : ComponentActivity() {
         if (::state.isInitialized) {
             state.refreshOverlayReady()
             state.refreshToday()
-            state.refreshWidget()
         }
     }
 }

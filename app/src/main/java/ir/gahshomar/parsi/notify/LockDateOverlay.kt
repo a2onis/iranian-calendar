@@ -1,7 +1,6 @@
 package ir.gahshomar.parsi.notify
 
 import android.accessibilityservice.AccessibilityService
-import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -156,11 +155,7 @@ class LockDateOverlay : AccessibilityService() {
 
         OverlayStyle.configure(this, text, layoutParams, aboveBar = true)
 
-        val lockOnly = prefs.getBoolean(OverlayStyle.KEY_LOCK_ONLY, false)
-        val keyguard = runCatching {
-            (getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
-        }.getOrDefault(false)
-        text.visibility = if (lockOnly && !keyguard) View.GONE else View.VISIBLE
+        text.visibility = View.VISIBLE
 
         val manager = getSystemService(Context.WINDOW_SERVICE) as? WindowManager
         runCatching { manager?.updateViewLayout(text, layoutParams) }

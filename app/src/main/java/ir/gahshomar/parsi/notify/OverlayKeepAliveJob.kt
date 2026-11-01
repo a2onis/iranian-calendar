@@ -6,7 +6,6 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
-import ir.gahshomar.parsi.widget.DateWidgetProvider
 
 /**
  * نگه‌داریِ پنجرهٔ تاریخ، بی هیچ اعلانی.
@@ -19,7 +18,6 @@ class OverlayKeepAliveJob : JobService() {
 
     override fun onStartJob(params: JobParameters?): Boolean {
         runCatching { OverlayService.sync(this) }
-        runCatching { DateWidgetProvider.refresh(this) }
         jobFinished(params, false)
         return false
     }

@@ -1,6 +1,5 @@
 package ir.gahshomar.parsi.notify
 
-import android.app.KeyguardManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -106,11 +105,7 @@ class OverlayService : Service() {
         val layoutParams = params ?: return
         OverlayStyle.configure(this, text, layoutParams, aboveBar = false)
 
-        val lockOnly = prefs.getBoolean(OverlayStyle.KEY_LOCK_ONLY, false)
-        val keyguard = runCatching {
-            (getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
-        }.getOrDefault(false)
-        text.visibility = if (lockOnly && !keyguard) View.GONE else View.VISIBLE
+        text.visibility = View.VISIBLE
 
         val manager = getSystemService(Context.WINDOW_SERVICE) as? WindowManager
         runCatching { manager?.updateViewLayout(text, layoutParams) }

@@ -26,7 +26,6 @@ object OverlayStyle {
     const val KEY_ENABLED = "overlay_enabled"
     const val KEY_POSITION = "overlay_position"
     const val KEY_SIZE = "overlay_size"
-    const val KEY_LOCK_ONLY = "overlay_lock_only"
     const val KEY_SHOW_YEAR = "overlay_show_year"
     const val KEY_SHORT = "overlay_short"
     const val KEY_PLATE = "overlay_plate"
@@ -40,8 +39,6 @@ object OverlayStyle {
     const val POS_BAR_END = "barEnd"
     const val POS_BELOW_START = "belowStart"
     const val POS_BELOW_END = "belowEnd"
-    const val POS_CENTER = "center"
-    const val POS_BOTTOM = "bottom"
 
     fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -129,13 +126,6 @@ object OverlayStyle {
             POS_BAR_END -> set(params, Gravity.TOP or Gravity.END, sideX, barY)
             POS_BELOW_START -> set(params, Gravity.TOP or Gravity.START, sideX, underBarY)
             POS_BELOW_END -> set(params, Gravity.TOP or Gravity.END, sideX, underBarY)
-            POS_CENTER -> set(params, Gravity.CENTER, 0, 0)
-            POS_BOTTOM -> set(
-                params,
-                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,
-                0,
-                (56f * metrics.density).toInt()
-            )
             else -> set(params, Gravity.TOP or Gravity.END, sideX, barY)
         }
     }

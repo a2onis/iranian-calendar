@@ -10,8 +10,6 @@
     <!-- اجازهٔ «نمایش روی برنامه‌های دیگر»: راهِ دومِ نمایشِ تاریخ، بی دسترس‌پذیری.
          این برنامه هیچ اعلانی نمی‌سازد. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- تنها برای بازگرداندنِ ویجت و پنجرهٔ تاریخ پس از روشن‌شدنِ دستگاه -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -60,22 +58,6 @@
             android:name=".notify.OverlayKeepAliveJob"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
-
-        <!-- ویجتِ صفحهٔ اصلی: تاریخِ درشت، بی هیچ اجازه‌ای -->
-        <receiver
-            android:name=".widget.DateWidgetProvider"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.intent.action.DATE_CHANGED" />
-                <action android:name="android.intent.action.TIME_SET" />
-                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_date_info" />
-        </receiver>
 
         <!--
           صفحهٔ همیشه‌روشن (AOD) را سامانه می‌کشد و برنامه‌ها نمی‌توانند روی آن بنویسند.

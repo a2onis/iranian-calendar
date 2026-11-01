@@ -12,18 +12,15 @@ import ir.gahshomar.parsi.notify.LockDateOverlay
 import ir.gahshomar.parsi.notify.OverlayKeepAliveJob
 import ir.gahshomar.parsi.notify.OverlayService
 import ir.gahshomar.parsi.notify.OverlayStyle
-import ir.gahshomar.parsi.widget.DateWidgetProvider
 import ir.gahshomar.parsi.ui.theme.Season
 
-/** جای پنجرهٔ تاریخ روی صفحه */
+/** جای تاریخ در نوار وضعیت */
 enum class OverlaySpot(val key: String, val label: String) {
-    BAR_START("barStart", "نوار وضعیت — چپ"),
-    BAR_CENTER("barCenter", "نوار وضعیت — میان"),
-    BAR_END("barEnd", "نوار وضعیت — راست"),
-    BELOW_START("belowStart", "زیر نوار — چپ"),
-    BELOW_END("belowEnd", "زیر نوار — راست"),
-    CENTER("center", "میانِ صفحه"),
-    BOTTOM("bottom", "پایینِ صفحه")
+    BAR_START("barStart", "چپِ نوار"),
+    BAR_CENTER("barCenter", "میانِ نوار"),
+    BAR_END("barEnd", "راستِ نوار"),
+    BELOW_START("belowStart", "زیرِ نوار — چپ"),
+    BELOW_END("belowEnd", "زیرِ نوار — راست")
 }
 
 /** اندازهٔ متن تاریخ روی صفحه */
@@ -93,9 +90,6 @@ class AppState(val context: Context) {
             ?: OverlaySize.MEDIUM
     )
     val overlaySize: OverlaySize get() = overlaySizeState
-
-    private var overlayLockOnlyState by mutableStateOf(prefs.getBoolean("overlay_lock_only", false))
-    val overlayLockOnly: Boolean get() = overlayLockOnlyState
 
     private var overlayYearState by mutableStateOf(prefs.getBoolean("overlay_show_year", false))
     val overlayShowYear: Boolean get() = overlayYearState
@@ -240,11 +234,6 @@ class AppState(val context: Context) {
         prefs.edit().putInt("overlay_size", size.sp).apply()
     }
 
-    fun setOverlayLockOnly(value: Boolean) {
-        overlayLockOnlyState = value
-        prefs.edit().putBoolean("overlay_lock_only", value).apply()
-    }
-
     fun setOverlayShowYear(value: Boolean) {
         overlayYearState = value
         prefs.edit().putBoolean("overlay_show_year", value).apply()
@@ -266,12 +255,6 @@ class AppState(val context: Context) {
         overlayCanDrawState = Settings.canDrawOverlays(context)
         overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
         overlayStatusState = OverlayStyle.status(context)
-        widgetInstalledState = runCatching {
-            val manager = android.appwidget.AppWidgetManager.getInstance(context)
-            (manager?.getAppWidgetIds(
-                android.content.ComponentName(context, DateWidgetProvider::class.java)
-            )?.size ?: 0) > 0
-        }.getOrDefault(false)
         syncOverlay()
         overlayStatusState = OverlayStyle.status(context)
     }
@@ -280,13 +263,7 @@ class AppState(val context: Context) {
     private fun syncOverlay() {
         runCatching { OverlayService.sync(context) }
         runCatching { OverlayKeepAliveJob.ensure(context) }
-        runCatching { DateWidgetProvider.refresh(context) }
         overlayLiveState = LockDateOverlay.attachedNow || OverlayService.attachedNow
-    }
-
-    /** ویجت را هم به تاریخِ امروز می‌آورد */
-    fun refreshWidget() {
-        runCatching { DateWidgetProvider.refresh(context) }
     }
 
     // ───────────────────────────────────────── ابزارهای نمایش
